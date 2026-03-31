@@ -54,11 +54,47 @@ function renderStatus() {
 };
 
 function handleGenerate() {
-    const source = state.sourceImages[0];
-    if (!source) return;
-    const canvas = mutateImage(source);
+    const stageWidth = 1000;
+    const stageHeight = 700;
+
     stage.innerHTML = '';
-    stage.appendChild(canvas);
+    const shuffled = [...state.sourceImages].sort(() => Math.random() - 0.5);
+    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // this is a good place to adjust number of overlapped layers
+    const selected = shuffled.slice(0, layerCount);
+
+    selected.forEach((source, index) => {
+        const canvas = mutateImage(source);
+        const aspectRatio = canvas.height / canvas.width;
+        let layerWidth;
+        if (Math.random() < 0.333) {
+            layerWidth = random(stageWidth * 0.5, stageWidth * 0.9); // good place to adjust size of layers
+        } else if (Math.random() > 0.333 && Math.random() < 0.6666) {
+            if (index === 0) {
+                layerWidth = random(stageWidth * 0.7, stageWidth * 1.0);
+            } else {
+                layerWidth = random(stageWidth * 0.35, stageWidth * 0.75);
+            }
+        } else {
+            if (index === 0) {
+                layerWidth = random(stageWidth * 0.9, stageWidth * 1.2);
+            }
+        }
+        const layerHeight = layerWidth * aspectRatio;
+        // more metrics to adjust below
+        const x = random(-layerWidth * 0.15, stageWidth - layerWidth * 0.85);
+        const y = random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85);
+
+        canvas.style.position = 'absolute';
+        canvas.style.left = `${x}px`;
+        canvas.style.top = `${y}px`;
+        canvas.style.width = `${layerWidth}px`;
+        canvas.style.height = `${layerHeight}px`;
+        canvas.style.opacity = random(0.55, 0.9);
+        canvas.style.zIndex = index + 1;
+        canvas.style.transform = `rotate(${random(-10, 10)}deg)`;
+
+        stage.appendChild(canvas);
+    })
 };
 
 // muates image. currently only draws image onto canvas
@@ -85,8 +121,7 @@ function mutateImage(source) {
 
     ctx.drawImage(image, 0, 0, width, height);
 
-    // here I can choose a random percentage where it won't happen
-
+    // here I can choose a random percentage for mutation
     for (let i = 0; i < random(1, 5); i++) {
         erasePolygon(ctx, width, height)
     };
@@ -94,7 +129,6 @@ function mutateImage(source) {
         shiftSlices(ctx, width, height);
         shiftSlices(ctx, width, height)
     };
-
 
     return newCanvas;
 };
@@ -163,7 +197,7 @@ function shiftSlices(ctx, width, height) {
 
     tempCanvas.width = width;
     tempCanvas.height = height;
-    
+
     tempCtx.drawImage(ctx.canvas, 0, 0);
 
     const horizontal = Math.random() < 0.5;
@@ -194,7 +228,7 @@ function shiftSlices(ctx, width, height) {
         while (x < width) {
             let sliceWidth = Math.floor(random(width * 0.06, width * 0.22));
             sliceWidth = Math.min(sliceWidth, width - x);
-            
+
             let shiftY;
             if (Math.random() < 0.25) {
                 shiftY = 0;

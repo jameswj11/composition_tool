@@ -1,0 +1,12 @@
+#stage {
+  position: relative;
+  width: 1000px;
+  height: 700px;
+  overflow: hidden;
+  background: black;
+  margin: 0 auto;
+}
+
+#mainContainer {
+    margin: 0 auto;
+}
