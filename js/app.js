@@ -85,5 +85,54 @@ function mutateImage(source) {
 
     ctx.drawImage(image, 0, 0, width, height);
     
+    erasePolygon(ctx, width, height)
+
     return newCanvas;
 };
+
+// erases polygons from canvas
+function erasePolygon(ctx, width, height) {
+    ctx.save();
+
+    // erases polygons
+    ctx.globalCompositeOperation = 'destination-out';
+
+    // chooses a random location to start operation
+    const centerX = random(width * 0.2, width * 0.8);
+    const centerY = random(height * 0.2, height * 0.8);
+
+    // set size of polygon
+    const minDim = Math.min(width, height);
+    const radius = random(minDim * 0.1, minDim * 0.25)
+
+    // set polygon complexity
+    const points = Math.floor(random(4, 9)); // 4-8 points
+
+    ctx.beginPath();
+
+    // build shape
+    for (let i = 0; i < points; i++) {
+        // evenly spaced angle
+        const baseAngle = (Math.PI * 2 * i) / points;
+
+        // adds randomness to angle
+        const angle = baseAngle + random(-0.3, 0.3)
+
+        // varies radius per point
+        const r = radius * random(0.6, 1.3);
+
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+
+        (i === 0) ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+    };
+
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+};
+
+// random helper
+function random(max, min) {
+    return Math.random() * (max - min) + min;
+}
