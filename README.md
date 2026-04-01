@@ -34,7 +34,7 @@ The tool generates layered compositions from uploaded images using controlled ra
 
 ```
 /js
-  main.js          // entry point + event wiring
+  app.js          // entry point + event wiring
   state.js         // global state
   dom.js           // DOM element references
   utils.js         // helper functions (random, clamp, etc.)
