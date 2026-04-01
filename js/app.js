@@ -1,6 +1,14 @@
 const state = {
     sourceImages: [],
-    layers: []
+    layers: [],
+    hasGenerated: false,
+
+    // FUTURE CONTRO: global settings
+    compositionSettings: {
+        useCompositionMode: false,
+        useOverlapPlacement: false,
+        useSmartRemix: true
+    }
 };
 
 const generateBtn = document.getElementById('generateBtn');
@@ -9,7 +17,7 @@ const fileInput = document.getElementById('fileInput');
 const stage = document.getElementById('stage');
 
 generateBtn.addEventListener('click', handleGenerate);
-remixBtn.addEventListener('click', remixLayout)
+remixBtn.addEventListener('click', remixLayers)
 
 // adds listener to file input to get images, handles upload
 fileInput.addEventListener('change', handleFiles);
@@ -57,22 +65,77 @@ function renderStatus() {
 };
 
 function handleGenerate() {
+    const stageWidth = 1000;
+    const stageHeight = 700;
+
     stage.innerHTML = '';
 
     const shuffled = [...state.sourceImages].sort(() => Math.random() - 0.5);
-    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length);
+    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // FUTURE CONTROL: density / layer count range
     const selected = shuffled.slice(0, layerCount);
 
-    state.layers = selected.map(source => mutateImage(source));
+    const {
+        useCompositionMode,
+        useOverlapPlacement
+    } = state.compositionSettings;
 
-    remixBtn.disabled = state.layers.length === 0;
+    const mode = getCompositionMode();
+    const placedLayers = [];
 
-    state.layers.forEach((canvas, index) => {
-        placeLayerOnStage(canvas, index)
+    state.layers = selected.map((source, index) => {
+        const role = getLayerRole(index, layerCount);
+        const canvas = mutateImage(source);
+        const aspectRatio = canvas.height / canvas.width;
+        const width = getLayerWidthByRole(role, stageWidth)
+        const height = width * aspectRatio;
+
+        // FUTURE CONTROL: overlap intensity
+        const targetOverlap =
+            role === 'dominant' ? 0 :
+                role === 'support' ? 1 : 2;
+
+        const placement = findPlacement({
+            mode,
+            layerWidth: width,
+            layerHeight: height,
+            stageWidth,
+            stageHeight,
+            placedLayers,
+            targetOverlap,
+            useCompositionMode,
+            useOverlapPlacement
+        });
+
+        const layer = {
+            canvas,
+            x: placement.x,
+            y: placement.y,
+            width,
+            height,
+
+            // FUTURE CONTROL: rotation intensity
+            rotation: role === 'dominant' ?
+                random(-4, 4) :
+                random(-12, 12),
+
+            // FUTURE CONTROL: opacity range
+            opacity: role === 'dominant' ?
+                random(0.75, 1) :
+                random(0.35, 0.85),
+            zIndex: index
+        };
+
+        placedLayers.push(layer);
+        return layer;
     });
+
+    renderLayers();
+
+    state.hasGenerated = true;
+    remixBtn.disabled = false;
 };
 
-// muates image. currently only draws image onto canvas
+// muates image
 function mutateImage(source) {
     console.log('mutating');
     const image = source.image;
@@ -96,10 +159,12 @@ function mutateImage(source) {
 
     ctx.drawImage(image, 0, 0, width, height);
 
-    // here I can choose a random percentage for mutation
+    // FUTURE CONTROL: number of polygon erasures per image
     for (let i = 0; i < random(1, 5); i++) {
         erasePolygon(ctx, width, height)
     };
+
+    // FUTURE CONTROL: frequency of slice shifting
     if (Math.random() < 0.7) {
         shiftSlices(ctx, width, height);
         shiftSlices(ctx, width, height)
@@ -219,15 +284,67 @@ function shiftSlices(ctx, width, height) {
     };
 };
 
-function remixLayout() {
-    if (!state.layers || !state.layers.length) return;
-
+// main render layer function
+function renderLayers() {
     stage.innerHTML = '';
 
-    state.layers.forEach((canvas, index) => {
-        placeLayerOnStage(canvas, index)
-    })
-}
+    state.layers.forEach((layer) => {
+        const img = document.createElement('img');
+        img.src = layer.canvas.toDataURL();
+
+        img.style.position = 'absolute';
+        img.style.left = `${layer.x}px`;
+        img.style.top = `${layer.y}px`;
+        img.style.width = `${layer.width}px`;
+        img.style.height = `${layer.height}px`;
+        img.style.opacity = layer.opacity;
+        img.style.transform = `rotate(${layer.rotation}deg)`;
+        img.style.zIndex = layer.zIndex;
+
+        stage.appendChild(img);
+    });
+};
+
+// preserve layers and remix
+function remixLayers() {
+    const stageWidth = 1000;
+    const stageHeight = 700;
+    const { useSmartRemix } = state.compositionSettings;
+
+    state.layers = state.layers.map((layer, index) => {
+        if (!useSmartRemix) {
+            return {
+                ...layer,
+                x: random(-layer.width * 0.2, stageWidth - layer.width * 0.8),
+                y: random(-layer.height * 0.2, stageHeight - layerHeight * 0.8),
+                rotation: random(-15, 15),
+                opacity: random(0.35, 1)
+            };
+        };
+
+        const positionJitter = index === 0 ? 60 : 100; // FUTURE CONTROL: remix position jitter
+        const rotationJitter = index === 0 ? 4 : 8;
+        const opactiyJitter = 0.08;
+
+        return {
+            ...layer,
+            x: clamp(
+                layer.x + random(-positionJitter, positionJitter),
+                -layer.width * 0.3,
+                stageWidth - layer.width * 0.7
+            ),
+            y: clamp(
+                layer.y + random(-positionJitter, positionJitter),
+                -layer.height * 0.3,
+                stageHeight - layer.height * 0.7
+            ),
+            rotation: layer.rotation + random(-rotationJitter, rotationJitter),
+            opacity: clamp(layer.opacity + random(-opactiyJitter, opactiyJitter), 0.35, 1)
+        };
+    });
+
+    renderLayers();
+};
 
 function placeLayerOnStage(canvas, index) {
     const stageWidth = 1000;
@@ -269,9 +386,198 @@ function placeLayerOnStage(canvas, index) {
     canvas.style.transform = `rotate(${random(-10, 10)}deg)`;
 
     stage.appendChild(canvas);
+};
+
+// gives generation spatial bias without killing randomness
+function getCompositionMode() {
+    // FUTURE CONTROL: composition mode weighting / manual control override
+    return weightedChoice([
+        { value: 'clustered', weight: 4 },
+        { value: 'spread', weight: 2 },
+        { value: 'verticalStack', weight: 2 },
+        { value: 'edgeWeighted', weight: 2 },
+        { value: 'centralVoic', weight: 1 },
+    ]);
+};
+
+// layer hierarchy
+function getLayerRole(index, total) {
+    if (index === 0) return 'dominant';
+    if (index < total - 1) return 'support';
+    return 'accent';
+};
+
+function getLayerWidthByRole(role, stageWidth) {
+    // FUTURE CONTROL: scale variance / hierarchy strength
+    if (role === 'dominant') return random(stageWidth * 0.6, stageWidth * 0.95);
+    if (role === 'support') return random(stageWidth * 0.3, stageWidth * 0.65);
+    return random(stageWidth * 0.15, stageWidth * 0.35);
 }
 
-// random helper
+// positioning by mode
+function placeLayerByCompMode(mode, layerWidth, layerHeight, stageWidth, stageHeight) {
+    // FUTURE CONTROLS BELOW: edge placement / cropping bias
+    switch (mode) {
+        case 'clustered':
+            return {
+                x: random(stageWidth * 0.15, stageWidth * 0.55),
+                y: random(stageHeight * 0.15, stageHeight * 0.55)
+            };
+        case 'spread':
+            return {
+                x: random(-layerWidth * 0.15, stageWidth - layerWidth * 0.85),
+                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
+            };
+        case 'verticalStack':
+            return {
+                x: random(stageWidth * 0.25, stageWidth * 0.55),
+                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
+            };
+        case 'edgeWeighted':
+            return {
+                x: Math.random() < 0.5 ?
+                    random(-layerWidth * 0.3, stageWidth * 0.15) :
+                    random(stageWidth * 0.7, stageWidth - layerWidth * 0.7),
+                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
+            };
+        case 'centralVoid': {
+            const zones = [
+                {
+                    xMin: -layerWidth * 0.2,
+                    xMax: stageWidth * 0.2,
+                    yMin: -layerHeight * 0.2,
+                    yMax: stageHeight - layerHeight * 0.8
+                },
+                {
+                    xMin: stageWidth * 0.8,
+                    xMax: stageWidth - layerWidth * 0.6,
+                    yMin: -layerHeight * 0.2,
+                    yMax: stageHeight - layerHeight * 0.8
+                },
+                {
+                    xMin: stageWidth * 0.25,
+                    xMax: stageWidth * 0.65,
+                    yMin: -layerHeight * 0.2,
+                    yMax: stageHeight * 0.15
+                },
+                {
+                    xMin: stageWidth * 0.25,
+                    xMax: stageWidth * 0.65,
+                    yMin: stageHeight * 0.8,
+                    yMax: stageHeight - layerHeight * 0.6
+                }
+            ];
+
+            const zone = zones[Math.floor(Math.random() * zones.length)];
+
+            return {
+                x: random(zone.xMin, zone.xMax),
+                y: random(zone.yMin, zone.yMax)
+            };
+        };
+
+        default:
+            return {
+                x: random(0, stageWidth - layerWidth),
+                y: random(0, stageHeight - layerHeight)
+            };
+    };
+};
+
+// overlap-aware placement
+function rectanglesOverlap(a, b) {
+    return !(
+        a.x + a.width < b.x ||
+        a.x > b.x + b.width ||
+        a.y + a.height < b.y ||
+        a.y > b.y + b.height
+    );
+};
+
+function countOverlaps(candidate, placedLayers) {
+    let count = 0;
+
+    for (const layer of placedLayers) {
+        if (rectanglesOverlap(candidate, layer)) {
+            count++
+        };
+    };
+
+    return count;
+};
+
+// placement search
+function findPlacement({
+    mode,
+    layerWidth,
+    layerHeight,
+    stageWidth,
+    stageHeight,
+    placedLayers,
+    targetOverlap,
+    useCompositionMode,
+    useOverlapPlacement
+}) {
+    if (!useCompositionMode && !useOverlapPlacement) {
+        return {
+            x: random(-layerWidth * 0.2, stageWidth - layerWidth * 0.8),
+            y: random(-layerHeight * 0.2, stageHeight - layerHeight * 0.8)
+        };
+    };
+
+    if (useCompositionMode && !useOverlapPlacement) {
+        return placeLayerByCompMode(mode, layerWidth, layerHeight, stageWidth, stageHeight)
+    };
+
+    let bestCandidate = null;
+    let bestScore = Infinity;
+
+    // FUTURE CONTORL: placement search intensity / strictness
+    for (let i = 0; i < 30; i++) {
+        const basePosition = useCompositionMode ?
+            placeLayerByCompMode(mode, layerWidth, layerHeight, stageWidth, stageHeight) :
+            {
+                x: random(-layerWidth * 0.2, stageWidth - layerWidth * 0.8),
+                y: random(-layerHeight * 0.2, stageHeight - layerHeight * 0.8)
+            };
+
+        const candidate = {
+            x: basePosition.x,
+            y: basePosition.y,
+            width: layerWidth,
+            height: layerHeight
+        };
+
+        const overlapCount = countOverlaps(candidate, placedLayers);
+        const score = Math.abs(overlapCount - targetOverlap);
+
+        if (score < bestScore) {
+            bestScore = score;
+            bestCandidate = candidate;
+        };
+    };
+
+    return bestCandidate;
+};
+
+// HELPER UTILITIES //
+
 function random(max, min) {
     return Math.random() * (max - min) + min;
-}
+};
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+};
+
+function weightedChoice(options) {
+    const total = options.reduce((sum, option) => sum + option.weight, 0);
+    let r = Math.random() * total;
+
+    for (const option of options) {
+        r -= option.weight;
+        if (r <= 0) return option.value;
+    };
+
+    return options[options.length - 1].value;
+};
