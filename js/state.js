@@ -8,5 +8,10 @@ export const state = {
         useCompositionMode: true,
         useOverlapPlacement: true,
         useSmartRemix: true
+    },
+    mutationSettings: {
+        posterizeEnabled: false,
+        sliceShift: true,
+        polygonErase: true
     }
 };

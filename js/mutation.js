@@ -1,4 +1,5 @@
 import { random } from './utils.js';
+import { state } from './state.js';
 
 // muates image
 export function mutateImage(source) {
@@ -25,18 +26,20 @@ export function mutateImage(source) {
     ctx.drawImage(image, 0, 0, width, height);
 
     // FUTURE CONTROL: number of polygon erasures per image
-    for (let i = 0; i < random(1, 5); i++) {
-        erasePolygon(ctx, width, height)
+    if (state.mutationSettings.polygonErase) {
+        for (let i = 0; i < random(1, 5); i++) {
+            erasePolygon(ctx, width, height)
+        };
     };
 
     // FUTURE CONTROL: frequency of slice shifting
-    if (Math.random() < 0.7) {
+    if (state.mutationSettings.sliceShift && Math.random() < 0.7) {
         shiftSlices(ctx, width, height);
         shiftSlices(ctx, width, height)
     };
 
     // FUTURE CONTROL: posterization toggle
-    if (Math.random() < 0.6) {
+    if (state.mutationSettings.posterizeEnabled && Math.random() < 0.6) {
         const posterizationLevels = Math.floor(random(2, 10));
         posterize(ctx, width, height, posterizationLevels)
     };
