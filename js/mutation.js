@@ -35,8 +35,29 @@ export function mutateImage(source) {
         shiftSlices(ctx, width, height)
     };
 
+    // FUTURE CONTROL: posterization toggle
+    if (Math.random() < 0.6) {
+        const posterizationLevels = Math.floor(random(2, 10));
+        posterize(ctx, width, height, posterizationLevels)
+    };
+
     return newCanvas;
 };
+
+export function posterize(ctx, width, height, posterizationLevels) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const step = 255 / (posterizationLevels - 1);
+
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.round(data[i] / step) * step;       // red
+        data[i + 1] = Math.round(data[i + 1] / step) * step; // green
+        data[i + 2] = Math.round(data[i + 2] / step) * step; // blue
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
 
 // erases polygons from canvas
 export function erasePolygon(ctx, width, height) {

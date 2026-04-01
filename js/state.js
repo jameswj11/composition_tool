@@ -5,8 +5,8 @@ export const state = {
 
     // FUTURE CONTROL: global settings
     compositionSettings: {
-        useCompositionMode: false,
-        useOverlapPlacement: false,
+        useCompositionMode: true,
+        useOverlapPlacement: true,
         useSmartRemix: true
     }
 };
