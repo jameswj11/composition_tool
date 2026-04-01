@@ -26,6 +26,14 @@ export function mutateImage(source, placedLayers = []) {
 
     ctx.drawImage(image, 0, 0, width, height);
 
+    if (state.mutationSettings.edgeErosion && Math.random() < 0.8) {
+        silhouetteBreak(ctx, width, height);
+    };
+
+    if (state.mutationSettings.edgeBite && Math.random() < 0.99) {
+        edgeBite(ctx, width, height);
+    };
+
     // FUTURE CONTROL: number of shape erasures per image
     if (state.mutationSettings.shapeErase) {
         for (let i = 0; i < random(1, 5); i++) {
@@ -146,6 +154,216 @@ export function posterizeImage(ctx, width, height, posterizationLevels) {
 
     ctx.putImageData(imageData, 0, 0);
 }
+
+export function buildEdgeShapePath(ctx, width, height) {
+    const minDim = Math.min(width, height);
+    const isCorner = Math.random() < 0.35;
+
+    let centerX;
+    let centerY;
+    let radiusX;
+    let radiusY;
+
+    if (isCorner) {
+        const corner = Math.floor(random(0, 4)); // 0 TL, 1 TR, 2 BR, 3 BL
+
+        radiusX = random(minDim * 0.12, minDim * 0.28);
+        radiusY = random(minDim * 0.12, minDim * 0.28);
+
+        if (corner === 0) {
+            centerX = random(-radiusX * 0.6, radiusX * 0.35);
+            centerY = random(-radiusY * 0.6, radiusY * 0.35);
+        } else if (corner === 1) {
+            centerX = random(width - radiusX * 0.35, width + radiusX * 0.6);
+            centerY = random(-radiusY * 0.6, radiusY * 0.35);
+        } else if (corner === 2) {
+            centerX = random(width - radiusX * 0.35, width + radiusX * 0.6);
+            centerY = random(height - radiusY * 0.35, height + radiusY * 0.6);
+        } else {
+            centerX = random(-radiusX * 0.6, radiusX * 0.35);
+            centerY = random(height - radiusY * 0.35, height + radiusY * 0.6);
+        }
+    } else {
+        const edge = Math.floor(random(0, 4)); // 0 top, 1 right, 2 bottom, 3 left
+
+        if (edge === 0 || edge === 2) {
+            radiusX = random(width * 0.12, width * 0.3);
+            radiusY = random(minDim * 0.06, minDim * 0.16);
+
+            centerX = random(width * 0.12, width * 0.88);
+            centerY =
+                edge === 0
+                    ? random(-radiusY * 0.8, radiusY * 0.35)
+                    : random(height - radiusY * 0.35, height + radiusY * 0.8);
+        } else {
+            radiusX = random(minDim * 0.06, minDim * 0.16);
+            radiusY = random(height * 0.12, height * 0.3);
+
+            centerX =
+                edge === 1
+                    ? random(width - radiusX * 0.35, width + radiusX * 0.8)
+                    : random(-radiusX * 0.8, radiusX * 0.35);
+
+            centerY = random(height * 0.12, height * 0.88);
+        };
+    };
+
+    const pointsCount = Math.floor(random(5, 10));
+    const points = [];
+
+    for (let i = 0; i < pointsCount; i++) {
+        const baseAngle = (Math.PI * 2 * i) / pointsCount;
+        const angle = baseAngle + random(-0.22, 0.22);
+
+        const px = centerX + Math.cos(angle) * radiusX * random(0.7, 1.25);
+        const py = centerY + Math.sin(angle) * radiusY * random(0.7, 1.25);
+
+        points.push({ x: px, y: py });
+    };
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 0; i < points.length; i++) {
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
+
+        if (Math.random() < 0.65) {
+            const midX = (current.x + next.x) / 2;
+            const midY = (current.y + next.y) / 2;
+
+            const dx = next.x - current.x;
+            const dy = next.y - current.y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
+
+            const normalX = -dy / segmentLength;
+            const normalY = dx / segmentLength;
+
+            const curveOffset = random(-segmentLength * 0.28, segmentLength * 0.28);
+
+            const controlX = midX + normalX * curveOffset;
+            const controlY = midY + normalY * curveOffset;
+
+            ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
+        } else {
+            ctx.lineTo(next.x, next.y);
+        };
+    };
+
+    ctx.closePath();
+};
+
+export function buildIrregularSilhouettePath(ctx, width, height) {
+    const minDim = Math.min(width, height);
+    const depth = random(minDim * 0.04, minDim * 0.3); // FUTURE CONTROL: edge erosion intensity
+
+    const topSegments = Math.floor(random(3, 9));
+    const rightSegments = Math.floor(random(3, 9));
+    const bottomSegments = Math.floor(random(3, 9));
+    const leftSegments = Math.floor(random(3, 9));
+
+    const topPoints = [];
+    const rightPoints = [];
+    const bottomPoints = [];
+    const leftPoints = [];
+
+    // top edge: move left -> right, push inward (down)
+    for (let i = 0; i <= topSegments; i++) {
+        const x = (width * i) / topSegments;
+        const y = random(0, depth);
+        topPoints.push({ x, y });
+    }
+
+    // right edge: move top -> bottom, push inward (left)
+    for (let i = 0; i <= rightSegments; i++) {
+        const y = (height * i) / rightSegments;
+        const x = random(width - depth, width);
+        rightPoints.push({ x, y });
+    }
+
+    // bottom edge: move right -> left, push inward (up)
+    for (let i = bottomSegments; i >= 0; i--) {
+        const x = (width * i) / bottomSegments;
+        const y = random(height - depth, height);
+        bottomPoints.push({ x, y });
+    }
+
+    // left edge: move bottom -> top, push inward (right)
+    for (let i = leftSegments; i >= 0; i--) {
+        const y = (height * i) / leftSegments;
+        const x = random(0, depth);
+        leftPoints.push({ x, y });
+    }
+
+    const points = [
+        ...topPoints,
+        ...rightPoints,
+        ...bottomPoints,
+        ...leftPoints
+    ];
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 0; i < points.length; i++) {
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
+
+        if (Math.random() < 0.2) { // FUTURE CONTROL: angular vs. curved edge erosion
+            const midX = (current.x + next.x) / 2;
+            const midY = (current.y + next.y) / 2;
+
+            const dx = next.x - current.x;
+            const dy = next.y - current.y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
+
+            const normalX = -dy / segmentLength;
+            const normalY = dx / segmentLength;
+
+            const curveOffset = random(-segmentLength * 0.12, segmentLength * 0.12);
+
+            const controlX = midX + normalX * curveOffset;
+            const controlY = midY + normalY * curveOffset;
+
+            ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
+        } else {
+            ctx.lineTo(next.x, next.y);
+        }
+    }
+
+    ctx.closePath();
+}
+
+export function silhouetteBreak(ctx, width, height) {
+    const sourceCanvas = document.createElement('canvas');
+    const sourceCtx = sourceCanvas.getContext('2d');
+
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    sourceCtx.drawImage(ctx.canvas, 0, 0);
+
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.save();
+    buildIrregularSilhouettePath(ctx, width, height);
+    ctx.clip();
+    ctx.drawImage(sourceCanvas, 0, 0);
+    ctx.restore();
+};
+
+export function edgeBite(ctx, width, height) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+
+    const biteCount = Math.floor(random(2, 5));
+
+    for (let i = 0; i < biteCount; i++) {
+        buildEdgeShapePath(ctx, width, height);
+        ctx.fill();
+    };
+
+    ctx.restore();
+};
 
 // erases shape from canvas
 export function eraseShape(ctx, width, height) {
