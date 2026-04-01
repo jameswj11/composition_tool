@@ -2,8 +2,9 @@ import { random } from './utils.js';
 import { state } from './state.js';
 
 // muates image
-export function mutateImage(source) {
+export function mutateImage(source, placedLayers = []) {
     console.log('mutating');
+
     const image = source.image;
     const maxWidth = 2500;
     const maxHeight = 2500;
@@ -38,16 +39,85 @@ export function mutateImage(source) {
         shiftSlices(ctx, width, height)
     };
 
-    // FUTURE CONTROL: posterization toggle
-    if (state.mutationSettings.posterizeEnabled && Math.random() < 0.6) {
-        const posterizationLevels = Math.floor(random(2, 10));
-        posterize(ctx, width, height, posterizationLevels)
+    // FUTURE CONTROL: displacement of self and others
+    if (state.mutationSettings.displacement) {
+        const strength = random(8, 35);
+        let mapCanvas = null;
+
+        if (placedLayers.length > 0 && Math.random() < 0.5) {
+            const randomLayer = placedLayers[Math.floor(Math.random() * placedLayers.length)];
+            const scaledMapCanvas = document.createElement('canvas');
+            const scaledMapCtx = scaledMapCanvas.getContext('2d');
+
+            scaledMapCanvas.width = width;
+            scaledMapCanvas.height = height;
+
+            scaledMapCtx.drawImage(randomLayer.canvas, 0, 0, width, height);
+            mapCanvas = scaledMapCanvas;
+        }
+
+        displaceImage(ctx, width, height, strength, mapCanvas);
     };
 
+    // FUTURE CONTROL: posterization toggle
+    if (state.mutationSettings.posterize && Math.random() < 0.6) {
+        const posterizationLevels = Math.floor(random(2, 10));
+        posterizeImage(ctx, width, height, posterizationLevels)
+    };
+
+    console.log('canvas:', newCanvas, 'image source:', image)
     return newCanvas;
 };
 
-export function posterize(ctx, width, height, posterizationLevels) {
+export function displaceImage(ctx, width, height, strength, mapCanvas = null) {
+    const sourceCanvas = document.createElement('canvas');
+    const sourceCtx = sourceCanvas.getContext('2d');
+
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    sourceCtx.drawImage(ctx.canvas, 0, 0);;
+
+    const displacementCanvas = mapCanvas || sourceCanvas;
+    const displacementCtx = displacementCanvas.getContext('2d');
+    
+    const sourceImageData = sourceCtx.getImageData(0, 0, width, height);
+    const displacementImageData = displacementCtx.getImageData(0, 0, width, height);
+    
+    const sourceData = sourceImageData.data;
+    const mapData = displacementImageData.data;
+
+    const outputImageData = ctx.createImageData(width, height);
+    const outputData = outputImageData.data;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+
+            const r = mapData[i];
+            const g = mapData[i + 1];
+            const b = mapData[i + 2];
+
+            const brightness = (r + g + b) / 3;
+            const normalized = (brightness - 128) / 128;
+
+            const offsetX = Math.round(normalized * strength);
+            const offsetY = Math.round(normalized * strength);
+
+            const sampleX = Math.max(0, Math.min(width - 1, x + offsetX));
+            const sampleY = Math.max(0, Math.min(height - 1, y + offsetY));
+            const sampleIndex = (sampleY * width + sampleX) * 4;
+
+            outputData[i] = sourceData[sampleIndex];
+            outputData[i + 1] = sourceData[sampleIndex + 1];
+            outputData[i + 2] = sourceData[sampleIndex + 2];
+            outputData[i + 3] = sourceData[sampleIndex + 3];
+        };
+    };
+
+    ctx.putImageData(outputImageData, 0 , 0);
+};
+
+export function posterizeImage(ctx, width, height, posterizationLevels) {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 

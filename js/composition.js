@@ -25,7 +25,7 @@ export function handleGenerate() {
 
     const newLayers = selected.map((source, index) => {
         const role = getLayerRole(index + lockedLayers.length, desiredLayerCount);
-        const canvas = mutateImage(source);
+        const canvas = mutateImage(source, placedLayers);
         const aspectRatio = canvas.height / canvas.width;
         const width = getLayerWidthByRole(role, stageWidth)
         const height = width * aspectRatio;
