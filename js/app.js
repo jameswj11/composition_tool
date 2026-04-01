@@ -71,19 +71,21 @@ function handleGenerate() {
     stage.innerHTML = '';
 
     const shuffled = [...state.sourceImages].sort(() => Math.random() - 0.5);
-    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // FUTURE CONTROL: density / layer count range
-    const selected = shuffled.slice(0, layerCount);
+    const desiredLayerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // FUTURE CONTROL: density / layer count range
 
     const {
         useCompositionMode,
         useOverlapPlacement
     } = state.compositionSettings;
 
+    const lockedLayers = state.layers.filter(layer => layer.locked);
+    const availableSlots = Math.max(0, desiredLayerCount - lockedLayers.length)
+    const selected = shuffled.slice(0, availableSlots);
     const mode = getCompositionMode();
-    const placedLayers = [];
+    const placedLayers = [...lockedLayers];
 
-    state.layers = selected.map((source, index) => {
-        const role = getLayerRole(index, layerCount);
+    const newLayers = selected.map((source, index) => {
+        const role = getLayerRole(index + lockedLayers.length, desiredLayerCount);
         const canvas = mutateImage(source);
         const aspectRatio = canvas.height / canvas.width;
         const width = getLayerWidthByRole(role, stageWidth)
@@ -122,18 +124,41 @@ function handleGenerate() {
             opacity: role === 'dominant' ?
                 random(0.75, 1) :
                 random(0.35, 0.85),
-            zIndex: index
+            zIndex: lockedLayers.length + index,
+            locked: false,
+            showLockIndicator: false // UI-only, temporary
         };
 
         placedLayers.push(layer);
         return layer;
     });
 
+    state.layers = [...lockedLayers, ...newLayers]
+
     renderLayers();
+    flasLockedInidcators();
 
     state.hasGenerated = true;
     remixBtn.disabled = false;
 };
+
+// handles showing lock badge on layer lock
+function flasLockedInidcators(duration = 1000) {
+    state.layers.forEach(layer => {
+        if (layer.locked) {
+            layer.showLockIndicator = true
+        };
+    });
+
+    renderLayers();
+
+    setTimeout(() => {
+        state.layers.forEach(layer => {
+            layer.showLockIndicator = false
+        })
+        renderLayers();
+    }, duration)
+}
 
 // muates image
 function mutateImage(source) {
@@ -284,14 +309,41 @@ function shiftSlices(ctx, width, height) {
     };
 };
 
+// layer lock helper
+function toggleLayerLock(index) {
+    const layer = state.layers[index];
+    layer.locked = !layer.locked;
+    layer.showLockIndicator = true;
+
+    renderLayers();
+
+    setTimeout(() => {
+        layer.showLockIndicator = false;
+        renderLayers()
+    }, 1000)
+};
+
 // main render layer function
 function renderLayers() {
+    console.log('render layers')
     stage.innerHTML = '';
 
-    state.layers.forEach((layer) => {
-        const img = document.createElement('img');
-        img.src = layer.canvas.toDataURL();
+    state.layers.forEach((layer, index) => {
+        const wrapper = document.createElement('div');
 
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = `${layer.x}px`;
+        wrapper.style.top = `${layer.y}px`;
+        wrapper.style.width = `${layer.width}px`;
+        wrapper.style.height = `${layer.height}px`;
+        wrapper.style.transform = `rotate(${layer.rotation}deg)`;
+        wrapper.style.opacity = layer.opacity;
+        wrapper.style.zIndex = layer.zIndex;
+        wrapper.style.cursor = 'pointer';
+
+        const img = document.createElement('img');
+
+        img.src = layer.canvas.toDataURL();
         img.style.position = 'absolute';
         img.style.left = `${layer.x}px`;
         img.style.top = `${layer.y}px`;
@@ -301,7 +353,33 @@ function renderLayers() {
         img.style.transform = `rotate(${layer.rotation}deg)`;
         img.style.zIndex = layer.zIndex;
 
-        stage.appendChild(img);
+        wrapper.appendChild(img);
+        wrapper.addEventListener('dblclick', () => { // FUTURE CONTROL: layer lock UI
+            toggleLayerLock(index);
+        });
+
+        if (layer.showLockIndicator) {
+            const badge = document.createElement('div');
+            badge.textContent = 'L';
+
+            badge.style.position = 'absolute';
+            badge.style.top = '6px';
+            badge.style.right = '6px';
+            badge.style.width = '16px';
+            badge.style.height = '16px';
+            badge.style.fontSize = '10px';
+            badge.style.lineHeight = '16px';
+            badge.style.textAlign = 'center';
+            badge.style.background = 'red';
+            badge.style.color = 'white';
+            badge.style.borderRadius = '50%';
+            badge.style.pointerEvents = 'none';
+            badge.style.fontFamily = 'sans-serif';
+
+            wrapper.appendChild(badge);
+        };
+
+        stage.appendChild(wrapper)
     });
 };
 
@@ -312,6 +390,8 @@ function remixLayers() {
     const { useSmartRemix } = state.compositionSettings;
 
     state.layers = state.layers.map((layer, index) => {
+        if (layer.locked) return layer;
+
         if (!useSmartRemix) {
             return {
                 ...layer,
@@ -344,6 +424,7 @@ function remixLayers() {
     });
 
     renderLayers();
+    flasLockedInidcators();
 };
 
 function placeLayerOnStage(canvas, index) {
