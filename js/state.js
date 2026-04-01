@@ -14,6 +14,8 @@ export const state = {
         sliceShift: true,
         shapeErase: true,
         displacement: true,
-        destroyRebuild: true
+        destroyRebuild: true,
+        edgeBite: false,
+        edgeErosion: true
     }
 };
