@@ -1,12 +1,15 @@
 const state = {
-    sourceImages: []
+    sourceImages: [],
+    layers: []
 };
 
 const generateBtn = document.getElementById('generateBtn');
+const remixBtn = document.getElementById('remixBtn')
 const fileInput = document.getElementById('fileInput');
 const stage = document.getElementById('stage');
 
 generateBtn.addEventListener('click', handleGenerate);
+remixBtn.addEventListener('click', remixLayout)
 
 // adds listener to file input to get images, handles upload
 fileInput.addEventListener('change', handleFiles);
@@ -54,47 +57,19 @@ function renderStatus() {
 };
 
 function handleGenerate() {
-    const stageWidth = 1000;
-    const stageHeight = 700;
-
     stage.innerHTML = '';
+
     const shuffled = [...state.sourceImages].sort(() => Math.random() - 0.5);
-    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // this is a good place to adjust number of overlapped layers
+    const layerCount = Math.min(Math.floor(random(3, 6)), shuffled.length);
     const selected = shuffled.slice(0, layerCount);
 
-    selected.forEach((source, index) => {
-        const canvas = mutateImage(source);
-        const aspectRatio = canvas.height / canvas.width;
-        let layerWidth;
-        if (Math.random() < 0.333) {
-            layerWidth = random(stageWidth * 0.5, stageWidth * 0.9); // good place to adjust size of layers
-        } else if (Math.random() > 0.333 && Math.random() < 0.6666) {
-            if (index === 0) {
-                layerWidth = random(stageWidth * 0.7, stageWidth * 1.0);
-            } else {
-                layerWidth = random(stageWidth * 0.35, stageWidth * 0.75);
-            }
-        } else {
-            if (index === 0) {
-                layerWidth = random(stageWidth * 0.9, stageWidth * 1.2);
-            }
-        }
-        const layerHeight = layerWidth * aspectRatio;
-        // more metrics to adjust below
-        const x = random(-layerWidth * 0.15, stageWidth - layerWidth * 0.85);
-        const y = random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85);
+    state.layers = selected.map(source => mutateImage(source));
 
-        canvas.style.position = 'absolute';
-        canvas.style.left = `${x}px`;
-        canvas.style.top = `${y}px`;
-        canvas.style.width = `${layerWidth}px`;
-        canvas.style.height = `${layerHeight}px`;
-        canvas.style.opacity = random(0.55, 0.9);
-        canvas.style.zIndex = index + 1;
-        canvas.style.transform = `rotate(${random(-10, 10)}deg)`;
+    remixBtn.disabled = state.layers.length === 0;
 
-        stage.appendChild(canvas);
-    })
+    state.layers.forEach((canvas, index) => {
+        placeLayerOnStage(canvas, index)
+    });
 };
 
 // muates image. currently only draws image onto canvas
@@ -243,6 +218,58 @@ function shiftSlices(ctx, width, height) {
         };
     };
 };
+
+function remixLayout() {
+    if (!state.layers || !state.layers.length) return;
+
+    stage.innerHTML = '';
+
+    state.layers.forEach((canvas, index) => {
+        placeLayerOnStage(canvas, index)
+    })
+}
+
+function placeLayerOnStage(canvas, index) {
+    const stageWidth = 1000;
+    const stageHeight = 700;
+    const aspectRatio = canvas.height / canvas.width;
+
+    let layerWidth;
+
+    const sizeMode = Math.random()
+
+    if (sizeMode < 0.333) {
+        layerWidth = random(stageWidth * 0.5, stageWidth * 0.9);
+    } else if (sizeMode < 0.6666) {
+        if (index === 0) {
+            layerWidth = random(stageWidth * 0.7, stageWidth * 1.0);
+        } else {
+            layerWidth = random(stageWidth * 0.35, stageWidth * 0.75);
+        }
+    } else {
+        if (index === 0) {
+            layerWidth = random(stageWidth * 0.9, stageWidth * 1.2);
+        } else {
+            layerWidth = random(stageWidth * 0.35, stageWidth * 0.75);
+        }
+    }
+
+    const layerHeight = layerWidth * aspectRatio;
+
+    const x = random(-layerWidth * 0.15, stageWidth - layerWidth * 0.85);
+    const y = random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85);
+
+    canvas.style.position = 'absolute';
+    canvas.style.left = `${x}px`;
+    canvas.style.top = `${y}px`;
+    canvas.style.width = `${layerWidth}px`;
+    canvas.style.height = `${layerHeight}px`;
+    canvas.style.opacity = random(0.55, 0.9);
+    canvas.style.zIndex = index + 1;
+    canvas.style.transform = `rotate(${random(-10, 10)}deg)`;
+
+    stage.appendChild(canvas);
+}
 
 // random helper
 function random(max, min) {
