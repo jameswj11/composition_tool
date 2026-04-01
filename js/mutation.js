@@ -41,7 +41,7 @@ export function mutateImage(source, placedLayers = []) {
 
     // FUTURE CONTROL: displacement of self and others
     if (state.mutationSettings.displacement) {
-        const strength = random(8, 35);
+        const strength = random(4, 16);
         let mapCanvas = null;
 
         if (placedLayers.length > 0 && Math.random() < 0.5) {
@@ -93,6 +93,8 @@ export function displaceImage(ctx, width, height, strength, mapCanvas = null) {
     const outputImageData = ctx.createImageData(width, height);
     const outputData = outputImageData.data;
 
+    const directionMode = Math.random();
+
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const i = (y * width + x) * 4;
@@ -104,8 +106,17 @@ export function displaceImage(ctx, width, height, strength, mapCanvas = null) {
             const brightness = (r + g + b) / 3;
             const normalized = (brightness - 128) / 128;
 
-            const offsetX = Math.round(normalized * strength);
-            const offsetY = Math.round(normalized * strength);
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (directionMode < 0.33) {
+                offsetX = Math.round(normalized * strength);
+            } else if (directionMode < 0.66) {
+                offsetY = Math.round(normalized * strength);
+            } else {
+                offsetX = Math.round(normalized * strength);
+                offsetY = Math.round(normalized * strength)
+            };
 
             const sampleX = Math.max(0, Math.min(width - 1, x + offsetX));
             const sampleY = Math.max(0, Math.min(height - 1, y + offsetY));
