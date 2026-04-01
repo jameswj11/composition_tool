@@ -12,7 +12,8 @@ export const state = {
     mutationSettings: {
         posterize: false,
         sliceShift: false,
-        shapeErase: true,
-        displacement: false
+        shapeErase: false,
+        displacement: false,
+        destroyRebuild: true
     }
 };

@@ -59,6 +59,10 @@ export function mutateImage(source, placedLayers = []) {
         displaceImage(ctx, width, height, strength, mapCanvas);
     };
 
+    if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
+        destroyAndReconstruct(ctx, width, height);
+    };
+
     // FUTURE CONTROL: posterization toggle
     if (state.mutationSettings.posterize && Math.random() < 0.6) {
         const posterizationLevels = Math.floor(random(2, 10));
@@ -79,10 +83,10 @@ export function displaceImage(ctx, width, height, strength, mapCanvas = null) {
 
     const displacementCanvas = mapCanvas || sourceCanvas;
     const displacementCtx = displacementCanvas.getContext('2d');
-    
+
     const sourceImageData = sourceCtx.getImageData(0, 0, width, height);
     const displacementImageData = displacementCtx.getImageData(0, 0, width, height);
-    
+
     const sourceData = sourceImageData.data;
     const mapData = displacementImageData.data;
 
@@ -114,7 +118,7 @@ export function displaceImage(ctx, width, height, strength, mapCanvas = null) {
         };
     };
 
-    ctx.putImageData(outputImageData, 0 , 0);
+    ctx.putImageData(outputImageData, 0, 0);
 };
 
 export function posterizeImage(ctx, width, height, posterizationLevels) {
@@ -137,6 +141,57 @@ export function eraseShape(ctx, width, height) {
     ctx.save();
     ctx.globalCompositeOperation = 'destination-out';
 
+    buildOrganicShapePath(ctx, width, height);
+
+    ctx.fill();
+    ctx.restore();
+};
+
+export function destroyAndReconstruct(ctx, width, height) {
+    const sourceCanvas = document.createElement('canvas');
+    const sourceCtx = sourceCanvas.getContext('2d');
+
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    sourceCtx.drawImage(ctx.canvas, 0, 0);
+
+    ctx.save();
+    buildOrganicShapePath(ctx, width, height);
+    ctx.clip();
+
+    ctx.clearRect(0, 0, width, height);
+
+    const fragmentCount = Math.floor(random(4, 7));
+
+    for (let i = 0; i < fragmentCount; i++) {
+        const offsetX = random(-width * 0.18, width * 0.18);
+        const offsetY = random(-height * 0.18, height * 0.18);
+
+        const bandMode = Math.random() < 0.5;
+
+        ctx.save();
+        ctx.beginPath();
+
+        if (bandMode) {
+            const bandHeight = random(height * 0.08, height * 0.22);
+            const bandY = random(0, height - bandHeight);
+            ctx.rect(0, bandY, width, bandHeight);
+        } else {
+            const bandWidth = random(width * 0.08, width * 0.22);
+            const bandX = random(0, width - bandWidth);
+            ctx.rect(bandX, 0, bandWidth, height);
+        };
+
+        ctx.clip();
+        ctx.globalAlpha = random(0.35, 0.8);
+        ctx.drawImage(sourceCanvas, offsetX, offsetY, width, height);
+        ctx.restore();
+    };
+
+    ctx.restore();
+};
+
+export function buildOrganicShapePath(ctx, width, height) {
     let centerX;
     let centerY;
 
@@ -157,53 +212,51 @@ export function eraseShape(ctx, width, height) {
 
     const minDim = Math.min(width, height);
     const radius = random(minDim * 0.1, minDim * 0.25);
-    const pointsCount = Math.floor(random(4, 15)) // FUTURE CONTROL: number of shape points
+    const pointsCount = Math.floor(random(4, 9));
+
     const points = [];
 
     for (let i = 0; i < pointsCount; i++) {
         const baseAngle = (Math.PI * 2 * i) / pointsCount;
-        const angle = baseAngle + random(-0.3, 0.3)
-        const r = radius * random(0.1, 2); // FUTURE CONTROL: irregular vs. stable shapes
+        const angle = baseAngle + random(-0.3, 0.3);
+        const r = radius * random(0.6, 1.3);
 
         points.push({
             x: centerX + Math.cos(angle) * r,
             y: centerY + Math.sin(angle) * r
         });
+    };
 
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
 
-        for (let i = 0; i < points.length; i++) {
-            const current = points[i];
-            const next = points[(i + 1) % points.length];
+    for (let i = 0; i < points.length; i++) {
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
 
-            if (Math.random() < 0.65) { // FUTURE CONTROL: curve frequency
-                const midX = (current.x + next.x) / 2;
-                const midY = (current.y + next.y) / 2;
+        if (Math.random() < 0.65) {
+            const midX = (current.x + next.x) / 2;
+            const midY = (current.y + next.y) / 2;
 
-                const dx = next.x - current.x;
-                const dy = next.y - current.y;
-                const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
+            const dx = next.x - current.x;
+            const dy = next.y - current.y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                const normalX = -dy / segmentLength;
-                const normalY = dx / segmentLength;
+            const normalX = -dy / segmentLength;
+            const normalY = dx / segmentLength;
 
-                // FUTURE CONTROL: wilder bends vs. gentle softening
-                const curveOffset = random(-segmentLength * 0.35, segmentLength * 0.35)
-                
-                const controlX = midX + normalX * curveOffset;
-                const controlY = midY + normalY * curveOffset;
+            const curveOffset = random(-segmentLength * 0.35, segmentLength * 0.35);
 
-                ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
-            } else {
-                ctx.lineTo(next.x, next.y)
-            };
+            const controlX = midX + normalX * curveOffset;
+            const controlY = midY + normalY * curveOffset;
+
+            ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
+        } else {
+            ctx.lineTo(next.x, next.y);
         };
     };
 
     ctx.closePath();
-    ctx.fill();
-    ctx.restore();
 };
 
 export function shiftSlices(ctx, width, height) {
