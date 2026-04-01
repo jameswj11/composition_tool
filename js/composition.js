@@ -61,8 +61,8 @@ export function handleGenerate() {
 
             // FUTURE CONTROL: opacity range
             opacity: role === 'dominant' ?
-                random(0.75, 1) :
-                random(0.35, 0.85),
+                random(0.85, 1) :
+                random(0.5, 0.85),
             zIndex: lockedLayers.length + index,
             locked: false,
             showLockIndicator: false // UI-only, temporary
@@ -96,7 +96,7 @@ export function remixLayers() {
                 x: random(-layer.width * 0.2, stageWidth - layer.width * 0.8),
                 y: random(-layer.height * 0.2, stageHeight - layer.height * 0.8),
                 rotation: random(-15, 15),
-                opacity: random(0.35, 1)
+                opacity: random(0.5, 1)
             };
         };
 
@@ -117,7 +117,7 @@ export function remixLayers() {
                 stageHeight - layer.height * 0.7
             ),
             rotation: layer.rotation + random(-rotationJitter, rotationJitter),
-            opacity: clamp(layer.opacity + random(-opacityJitter, opacityJitter), 0.35, 1)
+            opacity: clamp(layer.opacity + random(-opacityJitter, opacityJitter), 0.5, 1)
         };
     });
 
@@ -146,78 +146,97 @@ export function getLayerRole(index, total) {
 
 export function getLayerWidthByRole(role, stageWidth) {
     // FUTURE CONTROL: scale variance / hierarchy strength
-    if (role === 'dominant') return random(stageWidth * 0.6, stageWidth * 0.95);
-    if (role === 'support') return random(stageWidth * 0.3, stageWidth * 0.65);
-    return random(stageWidth * 0.15, stageWidth * 0.35);
+    if (role === 'dominant') return random(stageWidth * 0.75, stageWidth * 1);
+    if (role === 'support') return random(stageWidth * 0.5, stageWidth * 1);
+    return random(stageWidth * 0.3, stageWidth * 0.75);
 }
 
 // positioning by mode
 export function placeLayerByCompMode(mode, layerWidth, layerHeight, stageWidth, stageHeight) {
-    // FUTURE CONTROLS BELOW: edge placement / cropping bias
+    const stageCenterX = stageWidth / 2;
+    const stageCenterY = stageHeight / 2;
+
+    function fromCenter(centerX, centerY, cropAllowance = 0.12) {
+        const minX = -layerWidth * cropAllowance;
+        const maxX = stageWidth - layerWidth * (1 - cropAllowance);
+        const minY = -layerHeight * cropAllowance;
+        const maxY = stageHeight - layerHeight * (1 - cropAllowance);
+
+        return {
+            x: clamp(centerX - layerWidth / 2, minX, maxX),
+            y: clamp(centerY - layerHeight / 2, minY, maxY)
+        };
+    };
+
     switch (mode) {
-        case 'clustered':
-            return {
-                x: random(stageWidth * 0.15, stageWidth * 0.55),
-                y: random(stageHeight * 0.15, stageHeight * 0.55)
-            };
-        case 'spread':
-            return {
-                x: random(-layerWidth * 0.15, stageWidth - layerWidth * 0.85),
-                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
-            };
-        case 'verticalStack':
-            return {
-                x: random(stageWidth * 0.25, stageWidth * 0.55),
-                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
-            };
-        case 'edgeWeighted':
-            return {
-                x: Math.random() < 0.5 ?
-                    random(-layerWidth * 0.3, stageWidth * 0.15) :
-                    random(stageWidth * 0.7, stageWidth - layerWidth * 0.7),
-                y: random(-layerHeight * 0.15, stageHeight - layerHeight * 0.85)
-            };
+        case 'clustered': {
+            const centerX = random(stageCenterX - stageWidth * 0.12, stageCenterX + stageWidth * 0.12);
+            const centerY = random(stageCenterY - stageHeight * 0.12, stageCenterY + stageHeight * 0.12);
+            return fromCenter(centerX, centerY, 0.08);
+        };
+
+        case 'spread': {
+            const centerX = random(stageWidth * 0.25, stageWidth * 0.75);
+            const centerY = random(stageHeight * 0.25, stageHeight * 0.75);
+            return fromCenter(centerX, centerY, 0.12);
+        };
+
+        case 'verticalStack': {
+            const centerX = random(stageCenterX - stageWidth * 0.08, stageCenterX + stageWidth * 0.08);
+            const centerY = random(stageHeight * 0.2, stageHeight * 0.8);
+            return fromCenter(centerX, centerY, 0.1);
+        };
+
+        case 'edgeWeighted': {
+            const centerX = Math.random() < 0.5
+                ? random(stageWidth * 0.22, stageWidth * 0.35)
+                : random(stageWidth * 0.65, stageWidth * 0.78);
+
+            const centerY = random(stageHeight * 0.2, stageHeight * 0.8);
+
+            return fromCenter(centerX, centerY, 0.1);
+        };
+
         case 'centralVoid': {
             const zones = [
                 {
-                    xMin: -layerWidth * 0.2,
-                    xMax: stageWidth * 0.2,
-                    yMin: -layerHeight * 0.2,
-                    yMax: stageHeight - layerHeight * 0.8
+                    xMin: stageWidth * 0.18,
+                    xMax: stageWidth * 0.3,
+                    yMin: stageHeight * 0.2,
+                    yMax: stageHeight * 0.8
                 },
                 {
-                    xMin: stageWidth * 0.8,
-                    xMax: stageWidth - layerWidth * 0.6,
-                    yMin: -layerHeight * 0.2,
-                    yMax: stageHeight - layerHeight * 0.8
+                    xMin: stageWidth * 0.7,
+                    xMax: stageWidth * 0.82,
+                    yMin: stageHeight * 0.2,
+                    yMax: stageHeight * 0.8
                 },
                 {
-                    xMin: stageWidth * 0.25,
+                    xMin: stageWidth * 0.35,
                     xMax: stageWidth * 0.65,
-                    yMin: -layerHeight * 0.2,
-                    yMax: stageHeight * 0.15
+                    yMin: stageHeight * 0.12,
+                    yMax: stageHeight * 0.25
                 },
                 {
-                    xMin: stageWidth * 0.25,
+                    xMin: stageWidth * 0.35,
                     xMax: stageWidth * 0.65,
-                    yMin: stageHeight * 0.8,
-                    yMax: stageHeight - layerHeight * 0.6
+                    yMin: stageHeight * 0.75,
+                    yMax: stageHeight * 0.88
                 }
             ];
 
             const zone = zones[Math.floor(Math.random() * zones.length)];
+            const centerX = random(zone.xMin, zone.xMax);
+            const centerY = random(zone.yMin, zone.yMax);
 
-            return {
-                x: random(zone.xMin, zone.xMax),
-                y: random(zone.yMin, zone.yMax)
-            };
+            return fromCenter(centerX, centerY, 0.08);
         };
 
-        default:
-            return {
-                x: random(0, stageWidth - layerWidth),
-                y: random(0, stageHeight - layerHeight)
-            };
+        default: {
+            const centerX = random(stageWidth * 0.3, stageWidth * 0.7);
+            const centerY = random(stageHeight * 0.3, stageHeight * 0.7);
+            return fromCenter(centerX, centerY, 0.08);
+        };
     };
 };
 
@@ -257,8 +276,8 @@ export function findPlacement({
 }) {
     if (!useCompositionMode && !useOverlapPlacement) {
         return {
-            x: random(-layerWidth * 0.2, stageWidth - layerWidth * 0.8),
-            y: random(-layerHeight * 0.2, stageHeight - layerHeight * 0.8)
+            x: random(-layerWidth * 0.05, stageWidth - layerWidth * 0.95),
+            y: random(-layerHeight * 0.05, stageHeight - layerHeight * 0.95)
         };
     };
 
@@ -274,8 +293,8 @@ export function findPlacement({
         const basePosition = useCompositionMode ?
             placeLayerByCompMode(mode, layerWidth, layerHeight, stageWidth, stageHeight) :
             {
-                x: random(-layerWidth * 0.2, stageWidth - layerWidth * 0.8),
-                y: random(-layerHeight * 0.2, stageHeight - layerHeight * 0.8)
+                x: random(-layerWidth * 0.08, stageWidth - layerWidth * 0.92),
+                y: random(-layerHeight * 0.08, stageHeight - layerHeight * 0.92)
             };
 
         const candidate = {
