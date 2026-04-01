@@ -1,5 +1,3 @@
-import { posterize } from "./mutation";
-
 export const state = {
     sourceImages: [],
     layers: [],
@@ -13,8 +11,8 @@ export const state = {
     },
     mutationSettings: {
         posterize: false,
-        sliceShift: true,
-        polygonErase: true,
-        displacement: true
+        sliceShift: false,
+        shapeErase: true,
+        displacement: false
     }
 };

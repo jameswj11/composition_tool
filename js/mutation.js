@@ -26,10 +26,10 @@ export function mutateImage(source, placedLayers = []) {
 
     ctx.drawImage(image, 0, 0, width, height);
 
-    // FUTURE CONTROL: number of polygon erasures per image
-    if (state.mutationSettings.polygonErase) {
+    // FUTURE CONTROL: number of shape erasures per image
+    if (state.mutationSettings.shapeErase) {
         for (let i = 0; i < random(1, 5); i++) {
-            erasePolygon(ctx, width, height)
+            eraseShape(ctx, width, height)
         };
     };
 
@@ -132,14 +132,11 @@ export function posterizeImage(ctx, width, height, posterizationLevels) {
     ctx.putImageData(imageData, 0, 0);
 }
 
-// erases polygons from canvas
-export function erasePolygon(ctx, width, height) {
+// erases shape from canvas
+export function eraseShape(ctx, width, height) {
     ctx.save();
-
-    // erases polygons
     ctx.globalCompositeOperation = 'destination-out';
 
-    // chooses a random location to start operation
     let centerX;
     let centerY;
 
@@ -156,32 +153,52 @@ export function erasePolygon(ctx, width, height) {
             Math.random() > 0.5
                 ? random(height * 0.05, height * 0.3)
                 : random(height * 0.7, height * 0.95);
-    }
+    };
 
-    // set size of polygon
     const minDim = Math.min(width, height);
-    const radius = random(minDim * 0.1, minDim * 0.25)
+    const radius = random(minDim * 0.1, minDim * 0.25);
+    const pointsCount = Math.floor(random(4, 15)) // FUTURE CONTROL: number of shape points
+    const points = [];
 
-    // set polygon complexity
-    const points = Math.floor(random(4, 9)); // 4-8 points
-
-    ctx.beginPath();
-
-    // build shape
-    for (let i = 0; i < points; i++) {
-        // evenly spaced angle
-        const baseAngle = (Math.PI * 2 * i) / points;
-
-        // adds randomness to angle
+    for (let i = 0; i < pointsCount; i++) {
+        const baseAngle = (Math.PI * 2 * i) / pointsCount;
         const angle = baseAngle + random(-0.3, 0.3)
+        const r = radius * random(0.1, 2); // FUTURE CONTROL: irregular vs. stable shapes
 
-        // varies radius per point
-        const r = radius * random(0.6, 1.3);
+        points.push({
+            x: centerX + Math.cos(angle) * r,
+            y: centerY + Math.sin(angle) * r
+        });
 
-        const x = centerX + Math.cos(angle) * r;
-        const y = centerY + Math.sin(angle) * r;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
 
-        (i === 0) ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        for (let i = 0; i < points.length; i++) {
+            const current = points[i];
+            const next = points[(i + 1) % points.length];
+
+            if (Math.random() < 0.65) { // FUTURE CONTROL: curve frequency
+                const midX = (current.x + next.x) / 2;
+                const midY = (current.y + next.y) / 2;
+
+                const dx = next.x - current.x;
+                const dy = next.y - current.y;
+                const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
+
+                const normalX = -dy / segmentLength;
+                const normalY = dx / segmentLength;
+
+                // FUTURE CONTROL: wilder bends vs. gentle softening
+                const curveOffset = random(-segmentLength * 0.35, segmentLength * 0.35)
+                
+                const controlX = midX + normalX * curveOffset;
+                const controlY = midY + normalY * curveOffset;
+
+                ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
+            } else {
+                ctx.lineTo(next.x, next.y)
+            };
+        };
     };
 
     ctx.closePath();
