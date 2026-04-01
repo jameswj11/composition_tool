@@ -1,3 +1,5 @@
+import { posterize } from "./mutation";
+
 export const state = {
     sourceImages: [],
     layers: [],
@@ -10,8 +12,9 @@ export const state = {
         useSmartRemix: true
     },
     mutationSettings: {
-        posterizeEnabled: false,
+        posterize: false,
         sliceShift: true,
-        polygonErase: true
+        polygonErase: true,
+        displacement: true
     }
 };
