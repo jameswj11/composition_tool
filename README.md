@@ -206,10 +206,11 @@ Use the **Live Server** extension and click “Go Live”.
 
 ## Notes
 
-* Upload images using the top-right controls
+* Upload or clear one or more images using the top-left controls
+* Choose image mutation and canvas settings
+* Restore to Default resets all settings
 * Generate creates a new composition
 * Remix reworks the current composition
-* Default resets all settings
 
 ---
 
