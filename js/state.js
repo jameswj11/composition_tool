@@ -17,7 +17,7 @@ export const state = {
         destroyRebuild: false,
         edgeBite: false,
         edgeErosion: false,
-        saturationBoost: true,
+        saturationBoost: false,
         hueReassign: false,
         colorInjection: false,
         valuePreservingSaturation: false,
@@ -25,7 +25,9 @@ export const state = {
         brightnessMasking: false
     },
     postProductionSettings: {
-        valueCompression: true,
-        saturationBoost: true
+        valueCompression: false,
+        saturationBoost: false,
+        depthCompression: false,
+        paletteLimiting: true
     }
 };

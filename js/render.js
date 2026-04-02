@@ -3,7 +3,6 @@ import { stage } from "./dom.js";
 
 // main render layer function
 export function renderLayers() {
-    console.log('render layers')
     stage.innerHTML = '';
 
     state.layers.forEach((layer, index) => {
@@ -100,7 +99,9 @@ export function renderCompositionToCanvas() {
     canvas.width = 1000;
     canvas.height = 700;
 
-    for (const layer of state.layers) {
+    const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
+
+    for (const layer of orderedLayers) {
         ctx.save();
         ctx.globalAlpha = layer.opacity;
         ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
