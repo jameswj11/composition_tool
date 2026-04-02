@@ -3,8 +3,6 @@ import { state } from './state.js';
 
 // muates image
 export function mutateImage(source, placedLayers = []) {
-    console.log('mutating');
-
     const image = source.image;
     const maxWidth = 2500;
     const maxHeight = 2500;
@@ -90,7 +88,7 @@ export function mutateImage(source, placedLayers = []) {
 
     if (state.mutationSettings.saturationBoost && Math.random() < 0.5) {
         const amount = random(4, 8);
-        boostSaturationInRegion(ctx, width, height, amount);
+        boostSaturationInRegion(ctx, width, height, amount, state.mutationSettings.brightnessMasking);
     };
 
     // FUTURE CONTROL: posterization toggle
@@ -99,7 +97,6 @@ export function mutateImage(source, placedLayers = []) {
         posterizeImage(ctx, width, height, posterizationLevels)
     };
 
-    console.log('canvas:', newCanvas, 'image source:', image)
     return newCanvas;
 };
 
@@ -628,31 +625,45 @@ export function hslToRgb(h, s, l) {
     };
 };
 
-export function boostSaturationInRegion(ctx, width, height, amount = 1.6) {
+export function boostSaturationInRegion(
+    ctx,
+    width,
+    height,
+    amount = 1.6,
+    useBrightnessMasking = false
+) {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const maskCanvas = document.createElement('canvas');
-    const maskCtx = maskCanvas.getContext('2d');
+    const maskData = createLargeRegionMask(width, height);
 
-    maskCanvas.width = width;
-    maskCanvas.height = height;
+    const brightnessRanges = ['dark', 'mid', 'light'];
+    const brightnessRange = brightnessRanges[Math.floor(Math.random() * brightnessRanges.length)];
 
-    maskCtx.fillStyle = 'black';
-    maskCtx.fillRect(0, 0, width, height);
-
-    maskCtx.fillStyle = 'white';
-    buildLargeOrganicShapePath(maskCtx, width, height);
-    maskCtx.fill();
-
-    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+    // when brightness masking is on:
+    // mostly use large region + brightness together
+    // sometimes use brightness across the whole image
+    // when brightness masking is off:
+    // just use the large region
+    const useRegionMask = useBrightnessMasking ? Math.random() < 0.7 : true;
 
     for (let i = 0; i < data.length; i += 4) {
-        const maskValue = maskData[i];
-
-        if (maskValue > 0 && data[i + 3] > 0) {
+        if (
+            data[i + 3] > 0 &&
+            pixelMatchesRegionAndBrightness(
+                maskData,
+                i,
+                data[i],
+                data[i + 1],
+                data[i + 2],
+                brightnessRange,
+                useBrightnessMasking,
+                useRegionMask
+            )
+        ) {
             const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
-            const boostedS = Math.min(1, s * amount);
+
+            const boostedS = Math.max(0.9, Math.min(1, s * amount));
             const rgb = hslToRgb(h, boostedS, l);
 
             data[i] = rgb.r;
@@ -851,4 +862,59 @@ export function pushSaturationPreserveValue(ctx, width, height, amount = 1.5) {
     };
 
     ctx.putImageData(imageData, 0, 0);
+};
+
+export function createLargeRegionMask(width, height) {
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    return maskCtx.getImageData(0, 0, width, height).data;
+};
+
+export function pixelMatchesRegionAndBrightness(
+    maskData,
+    pixelIndex,
+    r,
+    g,
+    b,
+    brightnessRange,
+    useBrightnessMasking,
+    useRegionMask
+) {
+    const inRegion = maskData[pixelIndex] > 0;
+
+    if (useRegionMask && !inRegion) return false;
+
+    if (!useBrightnessMasking) return useRegionMask ? inRegion : true;
+
+    const brightness = getBrightness(r, g, b);
+    const matchesBrightness = pixelMatchesBrightnessRange(brightness, brightnessRange);
+
+    if (useRegionMask) {
+        return inRegion && matchesBrightness;
+    } else {
+        return matchesBrightness;
+    };
+};
+
+
+export function getBrightness(r, g, b) {
+    return (r + g + b) / 3;
+};
+
+export function pixelMatchesBrightnessRange(brightness, range) {
+    if (range === 'dark') return brightness < 85;
+    if (range === 'mid') return brightness >= 85 && brightness <= 170;
+    if (range === 'light') return brightness > 170;
+    return true;
 };

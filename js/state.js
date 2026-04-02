@@ -11,16 +11,17 @@ export const state = {
     },
     mutationSettings: {
         posterize: false,
-        sliceShift: true,
-        shapeErase: true,
-        displacement: true,
-        destroyRebuild: true,
+        sliceShift: false,
+        shapeErase: false,
+        displacement: false,
+        destroyRebuild: false,
         edgeBite: false,
-        edgeErosion: true,
+        edgeErosion: false,
         saturationBoost: true,
-        hueReassign: true,
-        colorInjection: true,
-        valuePreservingSaturation: true,
-        colorRangeExpansion: true
+        hueReassign: false,
+        colorInjection: false,
+        valuePreservingSaturation: false,
+        colorRangeExpansion: false,
+        brightnessMasking: true
     }
 };
