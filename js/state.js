@@ -25,9 +25,9 @@ export const state = {
         brightnessMasking: false
     },
     postProductionSettings: {
-        valueCompression: false,
-        saturationBoost: false,
-        depthCompression: false,
+        valueCompression: true,
+        saturationBoost: true,
+        depthCompression: true,
         paletteLimiting: true
     }
 };

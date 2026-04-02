@@ -19,8 +19,8 @@ export function applyPostProduction(sourceCanvas) {
     ctx.drawImage(sourceCanvas, 0, 0);
 
     // for most of these global postproduction effects, no randomness
-    if (state.postProductionSettings.valueCompression) {
-        const compressionAmount = random(0.15, 0.75);
+    if (state.postProductionSettings.valueCompression && Math.random() < 0.3) {
+        const compressionAmount = random(0.4, 0.8);
         console.log('compress values, amount:', compressionAmount)
 
         compressValuesPost(
