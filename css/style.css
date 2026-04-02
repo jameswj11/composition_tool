@@ -1,12 +1,180 @@
 #stage {
   position: relative;
-  width: 1000px;
-  height: 700px;
   overflow: hidden;
-  background: gray;
   margin: 0 auto;
+  top: 30px;
 }
 
 #mainContainer {
-    margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.control-section {
+  margin-bottom: 12px;
+}
+
+.control-section-content {
+  font-size: 10px;
+  margin-top: 10px;
+}
+
+#clearImagesBtn:hover {
+  background: #222;
+}
+
+#clearImagesBtn:active {
+  transform: scale(0.98);
+}
+
+.upload-controls {
+  position: fixed;
+  top: 20px;
+  left: 15px;
+  z-index: 2000;
+
+  width: 169px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controls-panel {
+  width: 169px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  z-index: 1000;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+.controls-panel h2,
+.controls-panel h3 {
+  margin: 0 0 10px 0;
+}
+
+.controls-panel label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.controls-panel input[type="number"],
+.controls-panel input[type="color"] {
+  display: block;
+  margin-top: 4px;
+  width: 50%;
+}
+
+
+.sidebar-column {
+  position: fixed;
+  top: 145px;
+  left: 15px;
+
+  width: 169px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-buttons button {
+  width: 100%;
+}
+
+.action-buttons button:hover {
+  background: #222;;
+}
+
+.controls-header {
+  margin-bottom: 10px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+label.btn {
+  display: block;
+}
+
+.btn-primary {
+  background: #111;
+  color: #fff;
+  border-color: #333;
+}
+
+.btn-primary:hover {
+  background: #222;
+}
+
+.btn-secondary {
+  background: #e9e9e9;
+  color: #111;
+  border-color: #ccc;
+}
+
+.btn-secondary:hover {
+  background: #ddd;
+}
+
+.btn:disabled {
+  background: #ccc;
+  color: #777;
+  border-color: #bbb;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+button.upload-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid #333;
+  background: #111;
+}
+
+.upload-btn:hover {
+  background: #222;
+}
+
+.upload-btn:active {
+  transform: scale(0.98);
+}
+
+#status {
+  position: fixed;
+  top: 112px;
+  left: 20px;
+  z-index: 2000;
+
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: sans-serif;
+  color: #111;
 }
