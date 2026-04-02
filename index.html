@@ -10,95 +10,99 @@
 
 <body>
     <div id="mainContainer">
-        <div class="upload-controls">
-            <label for="fileInput" class="btn btn-secondary">
-                Upload Images
-            </label>
-            <input type="file" id="fileInput" accept="image/*" multiple hidden />
-            <button id="clearImagesBtn" class="btn btn-secondary">Clear Images</button>
-        </div>
+        <div class="left-rail">
+            <div class="upload-controls">
+                <label for="fileInput" class="btn btn-secondary">
+                    Upload Images
+                </label>
+                <input type="file" id="fileInput" accept="image/*" multiple hidden />
+                <button id="clearImagesBtn" class="btn btn-secondary">Clear Images</button>
+            </div>
 
-        <div id="status">0 images loaded.</div>
-        <div class="sidebar-column">
-            <aside id="controls" class="controls-panel">
-                <h3>Controls</h3>
-                <div class="controls-header">
-                    <button id="defaultBtn" class="btn btn-secondary">Reset to Default</button>
+            <div id="status">0 images loaded.</div>
+            <div class="sidebar-column">
+                <aside id="controls" class="controls-panel">
+                    <h3>Controls</h3>
+                    <div class="controls-header">
+                        <button id="defaultBtn" class="btn btn-secondary">Reset to Default</button>
+                    </div>
+                    <details class="control-section" open>
+                        <summary>Canvas</summary>
+                        <div class="control-section-content">
+                            <label>
+                                Width
+                                <input id="canvasWidth" type="number" min="100" max="2400" step="10" />
+                            </label>
+
+                            <label>
+                                Height
+                                <input id="canvasHeight" type="number" min="100" max=2400 step="10" />
+                            </label>
+
+                            <label>
+                                Background Color
+                                <input id="backgroundColor" type="color" />
+                            </label>
+                        </div>
+                    </details>
+                    <details class="control-section">
+                        <summary>Composition</summary>
+                        <div class="control-section-content">
+                            <label>
+                                <input id="useCompositionMode" type="checkbox" />
+                                Use Composition Mode
+                            </label>
+
+                            <label>
+                                <input id="useOverlapPlacement" type="checkbox" />
+                                Use Overlap Placement
+                            </label>
+
+                            <label>
+                                <input id="useSmartRemix" type="checkbox" />
+                                Use Smart Remix
+                            </label>
+                        </div>
+                    </details>
+                    <details class="control-section">
+                        <summary>Mutations</summary>
+                        <div class="control-section-content">
+                            <label><input id="posterize" type="checkbox" /> Posterize</label>
+                            <label><input id="sliceShift" type="checkbox" /> Slice Shift</label>
+                            <label><input id="shapeErase" type="checkbox" /> Shape Erase</label>
+                            <label><input id="displacement" type="checkbox" /> Displacement</label>
+                            <label><input id="destroyRebuild" type="checkbox" /> Destroy Rebuild</label>
+                            <label><input id="edgeBite" type="checkbox" /> Edge Bite</label>
+                            <label><input id="edgeErosion" type="checkbox" /> Edge Erosion</label>
+                            <label><input id="mutationSaturationBoost" type="checkbox" /> Saturation Boost</label>
+                            <label><input id="hueReassign" type="checkbox" /> Hue Reassign</label>
+                            <label><input id="colorInjection" type="checkbox" /> Color Injection</label>
+                            <label><input id="valuePreservingSaturation" type="checkbox" /> Value Preserving
+                                Saturation</label>
+                            <label><input id="colorRangeExpansion" type="checkbox" /> Color Range Expansion</label>
+                            <label><input id="brightnessMasking" type="checkbox" /> Brightness Masking</label>
+                        </div>
+                    </details>
+                    <details class="control-section">
+                        <summary>Post-Production</summary>
+                        <div class="control-section-content">
+                            <label><input id="valueCompressionPost" type="checkbox" /> Value Compression</label>
+                            <label><input id="postSaturationBoostPost" type="checkbox" /> Saturation Boost</label>
+                            <label><input id="depthCompressionPost" type="checkbox" /> Depth Compression</label>
+                            <label><input id="paletteLimitingPost" type="checkbox" /> Palette Limiting</label>
+                        </div>
+                    </details>
+                </aside>
+                <div class="action-buttons">
+                    <button id="remixBtn" class="btn btn-secondary" type="button">Remix</button>
+                    <button id="generateBtn" class="btn btn-secondary" type="button">Generate</button>
                 </div>
-                <details class="control-section" open>
-                    <summary>Canvas</summary>
-                    <div class="control-section-content">
-                        <label>
-                            Width
-                            <input id="canvasWidth" type="number" min="100" step="10" />
-                        </label>
-
-                        <label>
-                            Height
-                            <input id="canvasHeight" type="number" min="100" step="10" />
-                        </label>
-
-                        <label>
-                            Background Color
-                            <input id="backgroundColor" type="color" />
-                        </label>
-                    </div>
-                </details>
-                <details class="control-section">
-                    <summary>Composition</summary>
-                    <div class="control-section-content">
-                        <label>
-                            <input id="useCompositionMode" type="checkbox" />
-                            Use Composition Mode
-                        </label>
-
-                        <label>
-                            <input id="useOverlapPlacement" type="checkbox" />
-                            Use Overlap Placement
-                        </label>
-
-                        <label>
-                            <input id="useSmartRemix" type="checkbox" />
-                            Use Smart Remix
-                        </label>
-                    </div>
-                </details>
-                <details class="control-section">
-                    <summary>Mutations</summary>
-                    <div class="control-section-content">
-                        <label><input id="posterize" type="checkbox" /> Posterize</label>
-                        <label><input id="sliceShift" type="checkbox" /> Slice Shift</label>
-                        <label><input id="shapeErase" type="checkbox" /> Shape Erase</label>
-                        <label><input id="displacement" type="checkbox" /> Displacement</label>
-                        <label><input id="destroyRebuild" type="checkbox" /> Destroy Rebuild</label>
-                        <label><input id="edgeBite" type="checkbox" /> Edge Bite</label>
-                        <label><input id="edgeErosion" type="checkbox" /> Edge Erosion</label>
-                        <label><input id="mutationSaturationBoost" type="checkbox" /> Saturation Boost</label>
-                        <label><input id="hueReassign" type="checkbox" /> Hue Reassign</label>
-                        <label><input id="colorInjection" type="checkbox" /> Color Injection</label>
-                        <label><input id="valuePreservingSaturation" type="checkbox" /> Value Preserving
-                            Saturation</label>
-                        <label><input id="colorRangeExpansion" type="checkbox" /> Color Range Expansion</label>
-                        <label><input id="brightnessMasking" type="checkbox" /> Brightness Masking</label>
-                    </div>
-                </details>
-                <details class="control-section">
-                    <summary>Post-Production</summary>
-                    <div class="control-section-content">
-                        <label><input id="valueCompressionPost" type="checkbox" /> Value Compression</label>
-                        <label><input id="postSaturationBoostPost" type="checkbox" /> Saturation Boost</label>
-                        <label><input id="depthCompressionPost" type="checkbox" /> Depth Compression</label>
-                        <label><input id="paletteLimitingPost" type="checkbox" /> Palette Limiting</label>
-                    </div>
-                </details>
-            </aside>
-            <div class="action-buttons">
-                <button id="remixBtn" class="btn btn-secondary" type="button">Remix</button>
-                <button id="generateBtn" class="btn btn-secondary" type="button">Generate</button>
             </div>
         </div>
-        <div id="stage">
-
+        <div class="stage-wrapper">
+            <div id="stage">
+                
+            </div>
         </div>
     </div>
     <script type="module" src="js/app.js"></script>

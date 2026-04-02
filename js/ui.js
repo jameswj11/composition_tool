@@ -22,20 +22,6 @@ if (clearBtn) {
 
 const CONTROL_MAP = [
     {
-        id: 'canvasWidth',
-        type: 'number',
-        get: () => state.canvasWidth,
-        set: (value) => { state.canvasWidth = value; },
-        rerender: true
-    },
-    {
-        id: 'canvasHeight',
-        type: 'number',
-        get: () => state.canvasHeight,
-        set: (value) => { state.canvasHeight = value; },
-        rerender: true
-    },
-    {
         id: 'backgroundColor',
         type: 'color',
         get: () => state.backgroundColor,
@@ -187,6 +173,17 @@ function setControlValue(el, type, value) {
 }
 
 export function syncControlsFromState() {
+    const canvasWidthEl = document.getElementById('canvasWidth');
+    const canvasHeightEl = document.getElementById('canvasHeight');
+
+    if (canvasWidthEl) {
+        canvasWidthEl.value = state.canvasWidth;
+    }
+
+    if (canvasHeightEl) {
+        canvasHeightEl.value = state.canvasHeight;
+    }
+
     CONTROL_MAP.forEach((control) => {
         const el = document.getElementById(control.id);
         if (!el) {
@@ -222,14 +219,14 @@ export function initControls() {
 
     const generateBtn = document.getElementById('generateBtn');
     const defaultBtn = document.getElementById('defaultBtn');
-    const remixBtn = document.getElementById('remixBtn')
+    const remixBtn = document.getElementById('remixBtn');
 
     if (generateBtn) {
         generateBtn.addEventListener('click', () => {
             generateAndRender();
             remixBtn.disabled = !state.hasGenerated;
         });
-    };
+    }
 
     if (defaultBtn) {
         defaultBtn.addEventListener('click', () => {
@@ -238,15 +235,15 @@ export function initControls() {
 
             if (state.hasGenerated) {
                 rerenderCurrentComposition();
-            };
+            }
         });
-    };
+    }
 
     if (remixBtn) {
         remixBtn.addEventListener('click', () => {
-            remixAndRender()
+            remixAndRender();
         });
 
         remixBtn.disabled = !state.hasGenerated;
-    };
-};
+    }
+}

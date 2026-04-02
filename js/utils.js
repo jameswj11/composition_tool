@@ -6,6 +6,18 @@ export function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 };
 
+export function getCanvasOrientation(width, height) {
+  if (height > width) return 'portrait';
+  if (width > height) return 'landscape';
+  return 'square';
+};
+
+export function clampCanvasSize(value) {
+  const min = 100;
+  const max = 2400;
+  return Math.max(min, Math.min(max, value));
+};
+
 export function weightedChoice(options) {
     const total = options.reduce((sum, option) => sum + option.weight, 0);
     let r = Math.random() * total;
