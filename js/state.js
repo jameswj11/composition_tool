@@ -16,6 +16,11 @@ export const state = {
         displacement: true,
         destroyRebuild: true,
         edgeBite: false,
-        edgeErosion: true
+        edgeErosion: true,
+        saturationBoost: true,
+        hueReassign: true,
+        colorInjection: true,
+        valuePreservingSaturation: true,
+        colorRangeExpansion: true
     }
 };

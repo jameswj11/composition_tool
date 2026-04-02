@@ -67,8 +67,18 @@ export function mutateImage(source, placedLayers = []) {
         displaceImage(ctx, width, height, strength, mapCanvas);
     };
 
+    if (state.mutationSettings.hueReassign && Math.random() < 0.5) {
+        const hueShift = random(-0.22, 0.22);
+        reassignHueInRegion(ctx, width, height, hueShift);
+    };
+
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
+    };
+
+    if (state.mutationSettings.saturationBoost && Math.random() < 0.99) {
+        const amount = random(4, 8);
+        boostSaturationInRegion(ctx, width, height, amount);
     };
 
     // FUTURE CONTROL: posterization toggle
@@ -540,4 +550,208 @@ export function shiftSlices(ctx, width, height) {
             x += sliceWidth;
         };
     };
+};
+
+export function rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+
+    let h = 0;
+    let s = 0;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+        switch (max) {
+            case r:
+                h = (g - b) / d + (g < b ? 6 : 0);
+                break;
+            case g:
+                h = (b - r) / d + 2;
+                break;
+            case b:
+                h = (r - g) / d + 4;
+                break;
+        }
+
+        h /= 6;
+    }
+
+    return { h, s, l };
+}
+
+export function hslToRgb(h, s, l) {
+    let r, g, b;
+
+    if (s === 0) {
+        r = g = b = l;
+    } else {
+        const hueToRgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+
+        r = hueToRgb(p, q, h + 1 / 3);
+        g = hueToRgb(p, q, h);
+        b = hueToRgb(p, q, h - 1 / 3);
+    };
+
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+};
+
+export function boostSaturationInRegion(ctx, width, height, amount = 1.6) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+            const boostedS = Math.min(1, s * amount);
+            const rgb = hslToRgb(h, boostedS, l);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
+};
+
+export function buildLargeOrganicShapePath(ctx, width, height) {
+    const horizontalBias = Math.random() < 0.5;
+
+    let centerX;
+    let centerY;
+    let radiusX;
+    let radiusY;
+
+    if (horizontalBias) {
+        radiusX = random(width * 0.4, width * 0.9);
+        radiusY = random(height * 0.2, height * 0.4);
+
+        centerX = random(width * 0.28, width * 0.72);
+        centerY = random(height * 0.2, height * 0.8);
+    } else {
+        radiusX = random(width * 0.2, width * 0.4);
+        radiusY = random(height * 0.4, height * 0.9);
+
+        centerX = random(width * 0.2, width * 0.8);
+        centerY = random(height * 0.28, height * 0.72);
+    };
+
+    const pointsCount = Math.floor(random(6, 11));
+    const points = [];
+
+    for (let i = 0; i < pointsCount; i++) {
+        const baseAngle = (Math.PI * 2 * i) / pointsCount;
+        const angle = baseAngle + random(-0.22, 0.22);
+
+        const px = centerX + Math.cos(angle) * radiusX * random(0.75, 1.2);
+        const py = centerY + Math.sin(angle) * radiusY * random(0.75, 1.2);
+
+        points.push({ x: px, y: py });
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 0; i < points.length; i++) {
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
+
+        if (Math.random() < 0.7) {
+            const midX = (current.x + next.x) / 2;
+            const midY = (current.y + next.y) / 2;
+
+            const dx = next.x - current.x;
+            const dy = next.y - current.y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy) || 1;
+
+            const normalX = -dy / segmentLength;
+            const normalY = dx / segmentLength;
+
+            const curveOffset = random(-segmentLength * 0.16, segmentLength * 0.16);
+
+            const controlX = midX + normalX * curveOffset;
+            const controlY = midY + normalY * curveOffset;
+
+            ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
+        } else {
+            ctx.lineTo(next.x, next.y);
+        };
+    };
+
+    ctx.closePath();
+};
+
+export function reassignHueInRegion(ctx, width, height, hueShift = 0.18) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+
+            const shiftedH = (h + hueShift + 1) % 1;
+            const rgb = hslToRgb(shiftedH, s, l);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
 };
