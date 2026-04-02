@@ -229,7 +229,6 @@ Without a server:
 ### UI / Controls
 
 * Add sliders for effect intensities (currently hardcoded)
-* Group controls visually (collapse sections)
 * Add thumbnails for uploaded images
 * Add preset saving / loading
 
