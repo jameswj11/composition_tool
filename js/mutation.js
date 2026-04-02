@@ -67,6 +67,11 @@ export function mutateImage(source, placedLayers = []) {
         displaceImage(ctx, width, height, strength, mapCanvas);
     };
 
+    if (state.mutationSettings.hueReassign && Math.random() < 0.5) {
+        const hueShift = random(-0.22, 0.22);
+        reassignHueInRegion(ctx, width, height, hueShift);
+    };
+
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
     };
@@ -712,4 +717,41 @@ export function buildLargeOrganicShapePath(ctx, width, height) {
     };
 
     ctx.closePath();
+};
+
+export function reassignHueInRegion(ctx, width, height, hueShift = 0.18) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+
+            const shiftedH = (h + hueShift + 1) % 1;
+            const rgb = hslToRgb(shiftedH, s, l);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
 };
