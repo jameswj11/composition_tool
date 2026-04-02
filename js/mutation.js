@@ -257,10 +257,10 @@ export function buildIrregularSilhouettePath(ctx, width, height) {
     const minDim = Math.min(width, height);
     const depth = random(minDim * 0.04, minDim * 0.3); // FUTURE CONTROL: edge erosion intensity
 
-    const topSegments = Math.floor(random(3, 9));
-    const rightSegments = Math.floor(random(3, 9));
-    const bottomSegments = Math.floor(random(3, 9));
-    const leftSegments = Math.floor(random(3, 9));
+    const topSegments = Math.floor(random(2, 6));
+    const rightSegments = Math.floor(random(2, 6));
+    const bottomSegments = Math.floor(random(2, 6));
+    const leftSegments = Math.floor(random(2, 6));
 
     const topPoints = [];
     const rightPoints = [];
@@ -309,7 +309,7 @@ export function buildIrregularSilhouettePath(ctx, width, height) {
         const current = points[i];
         const next = points[(i + 1) % points.length];
 
-        if (Math.random() < 0.2) { // FUTURE CONTROL: angular vs. curved edge erosion
+        if (Math.random() < 0.5) { // FUTURE CONTROL: angular vs. curved edge erosion
             const midX = (current.x + next.x) / 2;
             const midY = (current.y + next.y) / 2;
 
@@ -320,7 +320,7 @@ export function buildIrregularSilhouettePath(ctx, width, height) {
             const normalX = -dy / segmentLength;
             const normalY = dx / segmentLength;
 
-            const curveOffset = random(-segmentLength * 0.12, segmentLength * 0.12);
+            const curveOffset = random(-segmentLength * 0.5, segmentLength * 0.9);
 
             const controlX = midX + normalX * curveOffset;
             const controlY = midY + normalY * curveOffset;
