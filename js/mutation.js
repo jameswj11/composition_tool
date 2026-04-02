@@ -66,27 +66,33 @@ export function mutateImage(source, placedLayers = []) {
     };
 
     // FUTURE CONTROLS: probability of color mutations happening (global)
-    if (state.mutationSettings.hueReassign && Math.random() < 0.5) {
+    if (state.mutationSettings.hueReassign && Math.random() < 0.25) {
         const hueShift = random(-0.22, 0.22);
         reassignHueInRegion(ctx, width, height, hueShift);
     };
 
-    if (state.mutationSettings.colorInjection && Math.random() < 0.5) {
+    if (state.mutationSettings.colorInjection && Math.random() < 0.18) {
         const targetColor = getInjectionColor();
         const strength = random(0.25, 0.55);
         injectColorInRegion(ctx, width, height, targetColor, strength);
     };
 
-    if (state.mutationSettings.valuePreservingSaturation && Math.random() < 0.5) {
+    if (state.mutationSettings.valuePreservingSaturation && Math.random() < 0.3) {
         const amount = random(1.3, 1.9);
         pushSaturationPreserveValue(ctx, width, height, amount);
+    };
+
+    if (state.mutationSettings.colorRangeExpansion && Math.random() < 0.2) {
+        const saturationAmount = random(1.25, 1.9);
+        const lightnessPush = random(0.04, 0.1);
+        expandColorRangeInRegion(ctx, width, height, saturationAmount, lightnessPush);
     };
 
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
     };
 
-    if (state.mutationSettings.saturationBoost && Math.random() < 0.5) {
+    if (state.mutationSettings.saturationBoost && Math.random() < 0.35) {
         const amount = random(4, 8);
         boostSaturationInRegion(ctx, width, height, amount, state.mutationSettings.brightnessMasking);
     };
@@ -864,7 +870,10 @@ export function pushSaturationPreserveValue(ctx, width, height, amount = 1.5) {
     ctx.putImageData(imageData, 0, 0);
 };
 
-export function createLargeRegionMask(width, height) {
+export function expandColorRangeInRegion(ctx, width, height, saturationAmount = 1.5, lightnessPush = 0.08) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
     const maskCanvas = document.createElement('canvas');
     const maskCtx = maskCanvas.getContext('2d');
 
@@ -878,43 +887,32 @@ export function createLargeRegionMask(width, height) {
     buildLargeOrganicShapePath(maskCtx, width, height);
     maskCtx.fill();
 
-    return maskCtx.getImageData(0, 0, width, height).data;
-};
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
 
-export function pixelMatchesRegionAndBrightness(
-    maskData,
-    pixelIndex,
-    r,
-    g,
-    b,
-    brightnessRange,
-    useBrightnessMasking,
-    useRegionMask
-) {
-    const inRegion = maskData[pixelIndex] > 0;
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
 
-    if (useRegionMask && !inRegion) return false;
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
 
-    if (!useBrightnessMasking) return useRegionMask ? inRegion : true;
+            if (s < 0.03) continue;
 
-    const brightness = getBrightness(r, g, b);
-    const matchesBrightness = pixelMatchesBrightnessRange(brightness, brightnessRange);
+            const expandedS = Math.min(1, s * saturationAmount);
 
-    if (useRegionMask) {
-        return inRegion && matchesBrightness;
-    } else {
-        return matchesBrightness;
+            let expandedL = l;
+            if (l >= 0.35 && l <= 0.65) {
+                expandedL = l < 0.5
+                    ? Math.max(0, l - lightnessPush)
+                    : Math.min(1, l + lightnessPush);
+            }
+
+            const rgb = hslToRgb(h, expandedS, expandedL);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
     };
-};
 
-
-export function getBrightness(r, g, b) {
-    return (r + g + b) / 3;
-};
-
-export function pixelMatchesBrightnessRange(brightness, range) {
-    if (range === 'dark') return brightness < 85;
-    if (range === 'mid') return brightness >= 85 && brightness <= 170;
-    if (range === 'light') return brightness > 170;
-    return true;
+    ctx.putImageData(imageData, 0, 0);
 };
