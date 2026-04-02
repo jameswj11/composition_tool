@@ -17,11 +17,17 @@ export const state = {
         destroyRebuild: false,
         edgeBite: false,
         edgeErosion: false,
-        saturationBoost: true,
+        saturationBoost: false,
         hueReassign: false,
         colorInjection: false,
         valuePreservingSaturation: false,
         colorRangeExpansion: false,
-        brightnessMasking: true
+        brightnessMasking: false
+    },
+    postProductionSettings: {
+        valueCompression: true,
+        saturationBoost: true,
+        depthCompression: true,
+        paletteLimiting: true
     }
 };

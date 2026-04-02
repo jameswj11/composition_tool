@@ -3,7 +3,6 @@ import { stage } from "./dom.js";
 
 // main render layer function
 export function renderLayers() {
-    console.log('render layers')
     stage.innerHTML = '';
 
     state.layers.forEach((layer, index) => {
@@ -91,4 +90,25 @@ export function flashLockedIndicators(duration = 1000) {
         })
         renderLayers();
     }, duration)
+};
+
+export function renderCompositionToCanvas() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 1000;
+    canvas.height = 700;
+
+    const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
+
+    for (const layer of orderedLayers) {
+        ctx.save();
+        ctx.globalAlpha = layer.opacity;
+        ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
+        ctx.rotate((layer.rotation * Math.PI) / 180);
+        ctx.drawImage(layer.canvas, -layer.width / 2, -layer.height / 2, layer.width, layer.height);
+        ctx.restore();
+    };
+
+    return canvas;
 };

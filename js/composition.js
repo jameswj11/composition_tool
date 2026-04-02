@@ -1,7 +1,20 @@
-import { renderLayers, flashLockedIndicators } from './render.js';
+import { renderCompositionToCanvas } from './render.js';
 import { state } from './state.js';
 import { random, clamp, weightedChoice } from './utils.js';
 import { mutateImage } from './mutation.js';
+import { applyPostProduction } from './postproduction.js';
+
+function renderFinalStage(stageWidth = 1000, stageHeight = 700) {
+    const compositionCanvas = renderCompositionToCanvas();
+    const finalCanvas = applyPostProduction(compositionCanvas);
+
+    finalCanvas.style.display = 'block';
+    finalCanvas.style.width = stageWidth + 'px';
+    finalCanvas.style.height = stageHeight + 'px';
+
+    stage.innerHTML = '';
+    stage.appendChild(finalCanvas);
+};
 
 export function handleGenerate() {
     const stageWidth = 1000;
@@ -74,8 +87,9 @@ export function handleGenerate() {
 
     state.layers = [...lockedLayers, ...newLayers]
 
-    renderLayers();
-    flashLockedIndicators();
+    state.layers = [...lockedLayers, ...newLayers];
+
+    renderFinalStage(stageWidth, stageHeight);
 
     state.hasGenerated = true;
     remixBtn.disabled = false;
@@ -121,8 +135,7 @@ export function remixLayers() {
         };
     });
 
-    renderLayers();
-    flashLockedIndicators();
+    renderFinalStage(stageWidth, stageHeight);
 };
 
 // gives generation spatial bias without killing randomness
