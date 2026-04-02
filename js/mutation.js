@@ -72,6 +72,12 @@ export function mutateImage(source, placedLayers = []) {
         reassignHueInRegion(ctx, width, height, hueShift);
     };
 
+    if (state.mutationSettings.colorInjection && Math.random() < 0.45) {
+        const targetColor = getInjectionColor();
+        const strength = random(0.25, 0.55);
+        injectColorInRegion(ctx, width, height, targetColor, strength);
+    }
+
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
     };
@@ -160,10 +166,10 @@ export function posterizeImage(ctx, width, height, posterizationLevels) {
         data[i] = Math.round(data[i] / step) * step;       // red
         data[i + 1] = Math.round(data[i + 1] / step) * step; // green
         data[i + 2] = Math.round(data[i + 2] / step) * step; // blue
-    }
+    };
 
     ctx.putImageData(imageData, 0, 0);
-}
+};
 
 export function buildEdgeShapePath(ctx, width, height) {
     const minDim = Math.min(width, height);
@@ -544,7 +550,7 @@ export function shiftSlices(ctx, width, height) {
                 shiftY = random(-25, 25);
             } else {
                 shiftY = random(-60, 60)
-            }
+            };
 
             ctx.drawImage(tempCanvas, x, 0, sliceWidth, height, x, shiftY, sliceWidth, height);
             x += sliceWidth;
@@ -578,13 +584,13 @@ export function rgbToHsl(r, g, b) {
             case b:
                 h = (r - g) / d + 4;
                 break;
-        }
+        };
 
         h /= 6;
-    }
+    };
 
     return { h, s, l };
-}
+};
 
 export function hslToRgb(h, s, l) {
     let r, g, b;
@@ -685,7 +691,7 @@ export function buildLargeOrganicShapePath(ctx, width, height) {
         const py = centerY + Math.sin(angle) * radiusY * random(0.75, 1.2);
 
         points.push({ x: px, y: py });
-    }
+    };
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -754,4 +760,49 @@ export function reassignHueInRegion(ctx, width, height, hueShift = 0.18) {
     };
 
     ctx.putImageData(imageData, 0, 0);
+};
+
+export function injectColorInRegion(ctx, width, height, targetColor, strength = 0.45) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            data[i] = data[i] * (1 - strength) + targetColor.r * strength;
+            data[i + 1] = data[i + 1] * (1 - strength) + targetColor.g * strength;
+            data[i + 2] = data[i + 2] * (1 - strength) + targetColor.b * strength;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
+};
+
+export function getInjectionColor() {
+    const palette = [
+        { r: 220, g: 60, b: 40 },   // red-orange
+        { r: 240, g: 170, b: 40 },  // warm yellow-orange
+        { r: 60, g: 140, b: 220 },  // blue
+        { r: 120, g: 80, b: 200 },  // violet
+        { r: 40, g: 170, b: 120 },  // green
+        { r: 230, g: 90, b: 150 }   // pink-magenta
+    ];
+
+    return palette[Math.floor(Math.random() * palette.length)];
 };
