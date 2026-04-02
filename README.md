@@ -1,264 +1,220 @@
-# Composition Tool
+# Image Composition Tool
 
-A browser-based image composition tool built with vanilla JavaScript.
-
-The tool generates layered compositions from uploaded images using controlled randomness, mutation, and spatial logic. It is designed primarily as a reference generator for painting — favoring ambiguity, hierarchy, cropping, and partial legibility over clean or finished imagery.
+A browser-based image composition and mutation tool for generating unstable, layered image references. Built as part of an ongoing painting practice focused on disrupting image authority and producing compositions that feel provisional, unresolved, and alive.
 
 ---
 
-## Features
+## Overview
 
-* Upload multiple source images
-* Canvas-based image mutation:
+This tool takes a set of uploaded images and generates layered compositions through a pipeline of:
 
-  * Polygon erasure (`destination-out`)
-  * Horizontal and vertical slice shifting
-* Layered composition system:
+1. **Image mutation (per-layer)**
+2. **Spatial composition (layout + overlap)**
+3. **Postproduction effects (global adjustments)**
 
-  * Randomized scale, position, rotation, opacity
-  * Composition modes (clustered, spread, edge-weighted, etc.)
-  * Overlap-aware placement
-* Remix system:
+The result is a flattened canvas that can be used as reference material for painting.
 
-  * Repositions layers without remutating
-  * Preserves composition identity (bounded perturbation)
-* Layer locking:
-
-  * Lock layers to preserve strong elements
-  * Generate and remix respect locked layers
-  * Temporary visual lock indicator (badge)
+The system is designed to introduce controlled instability—balancing structure with randomness—rather than producing clean or resolved outputs.
 
 ---
 
-## Project Structure
+## Current Features
+
+### Image Input
+
+* Upload multiple images
+* Images are stored in memory and used as a source pool
+* Ability to **append uploads across sessions**
+* **Clear Images** button to reset source pool
+
+---
+
+### Composition System
+
+* Randomized layer selection and placement
+* Overlapping and distributed layout modes
+* Rotation, scaling, and opacity variation
+* Smart remixing that preserves locked layers
+* Layer reuse during remix cycles
+
+---
+
+### Mutation System (Per Layer)
+
+Each image is mutated before placement using togglable effects:
+
+* Slice shifting
+* Shape erasure
+* Edge erosion / silhouette breaking
+* Displacement (self + cross-layer)
+* Destroy / reconstruct
+* Posterization
+* Hue reassignment (region-based)
+* Color injection
+* Value-preserving saturation push
+* Saturation boost (masked)
+* Color range expansion
+* Brightness-based masking system
+
+Mutations are:
+
+* Toggleable via UI
+* Probabilistic (not always applied)
+* Region-based rather than global
+
+---
+
+### Postproduction System (Global)
+
+Applied after composition is flattened:
+
+* Value compression
+* Depth compression
+* Saturation boost
+* Palette limiting
+
+These are:
+
+* Toggleable via UI
+* **Probabilistic (gated)** to avoid over-processing
+* Region + brightness-aware
+
+---
+
+### Rendering Pipeline
 
 ```
-/js
-  app.js          // entry point + event wiring
-  state.js         // global state
-  dom.js           // DOM element references
-  utils.js         // helper functions (random, clamp, etc.)
-  upload.js        // file handling + image loading
-  mutation.js      // canvas image mutation logic
-  composition.js   // generation + remix logic
-  render.js        // DOM rendering + UI indicators
+generate → state.layers
+→ renderCompositionToCanvas()
+→ applyPostProduction()
+→ display final canvas
 ```
 
----
-
-## How It Works
-
-### 1. Mutation
-
-Each source image is transformed using canvas operations:
-
-* Irregular polygon erasures
-* Slice-based displacement
-
-This produces unstable, fragmented image material.
-
-### 2. Composition
-
-Mutated images are layered using:
-
-* Role-based hierarchy (dominant / support / accent)
-* Composition modes (spatial bias)
-* Overlap-aware placement
-
-### 3. Remix
-
-Existing layers are perturbed:
-
-* Position, rotation, and opacity are adjusted
-* Locked layers remain fixed
+* No DOM layer rendering (canvas-only output)
+* Centralized render pipeline (`app.js`)
+* Background color controlled via state and UI
+* Canvas and stage dimensions dynamically linked
 
 ---
 
-## Development
+### UI System
 
-Run with a local server (required for ES modules):
+* Control panel for:
 
-```bash
-python3 -m http.server
-```
-
-Then open:
-
-```
-http://localhost:8000
-```
-
----
-
-## Philosophy
-
-This is not a design tool or collage app.
-
-The goal is to produce images that feel:
-
-* unresolved
-* spatially tense
-* partially legible
-* structurally interesting
-
-The system should generate compositions that are **usable as painting references**, not finished outputs.
+  * Canvas dimensions
+  * Background color
+  * Composition toggles
+  * Mutation toggles
+  * Postproduction toggles
+* Centralized `CONTROL_MAP` system for UI binding
+* Default state reset button
+* Generate / Remix controls fixed to viewport
+* Upload + Clear controls fixed and accessible
 
 ---
 
-## Mutation / Effects Roadmap
+## Architecture
 
-### 🎨 Color / Value Mutations
+### State Management
 
-- [ ] Value compression (high-key / low-key range squeeze)
-- [ ] Gradient mapping (map grayscale → limited palette)
-- [ ] Selective color replacement (target specific hues)
-- [ ] Global hue shift
-- [ ] Saturation scaling (flatten or intensify color)
-- [x] Posterization
-- [ ] Channel isolation (remove R/G/B selectively)
-- [ ] Channel swapping (R↔B, etc.)
-- [ ] Palette limiting (force image into N colors)
-- [ ] Palette transfer (apply colors from one image to another)
+* Single shared `state` object
+* Structured into:
+
+  * `compositionSettings`
+  * `mutationSettings`
+  * `postProductionSettings`
+* `defaultState` used for reset functionality
 
 ---
 
-### 🧩 Spatial / Structural Mutations
+### File Structure (Core)
 
-- [ ] Directional smearing (drag pixels along a vector)
-- [ ] Displacement mapping (image distorts itself or another)
-- [ ] Pixel sorting (sort pixels within regions)
-- [ ] Slice jitter variations (expand current system)
-- [ ] Region transforms (rotate/scale/shift selected areas)
-- [ ] Offset wrapping (image wraps around edges)
-- [ ] Tiling / repetition (duplicate fragments internally)
-- [ ] Perspective skew (non-uniform distortion)
-- [ ] Multi-pass mutation (stack multiple transformations)
-
----
-
-### 🎭 Masking / Conditional Mutations
-
-- [ ] Brightness-based masking (affect only darks or lights)
-- [ ] Color-range masking (affect only certain hues)
-- [ ] Edge masking (treat edges differently from flat areas)
-- [ ] Noise mask (random spatial selection)
-- [ ] Gradient mask (effect fades across image)
-- [ ] Region-based masking (expand polygon selection system)
+* `app.js` — orchestration (generate, remix, render)
+* `composition.js` — layer generation and remix logic
+* `mutation.js` — per-layer image transformations
+* `postproduction.js` — global image effects
+* `render.js` — canvas rendering
+* `ui.js` — UI binding and control system
+* `upload.js` — file handling
+* `state.js` — shared state + defaults
+* `dom.js` — DOM references
+* `utils.js` — helper functions
 
 ---
 
-### 🌫️ Atmospheric / Painterly Effects
+## Key Design Principles
 
-- [ ] Value flattening (reduce contrast selectively)
-- [ ] Haze generation (lift values + slight desaturation)
-- [ ] Glow / bloom (expand light areas softly)
-- [ ] Edge softening vs edge preservation
-- [ ] Depth compression (reduce spatial cues)
-- [ ] Local contrast suppression
-- [ ] Matte effect (reduce saturation + contrast subtly)
+* **State-driven architecture**
+  All behavior flows from a single shared state object.
 
----
+* **Separation of concerns**
+  Composition, mutation, rendering, and UI are isolated.
 
-### 🧪 Experimental / Weird Mutations
+* **Probabilistic control instead of determinism**
+  Toggles allow effects to participate rather than guarantee execution.
 
-- [ ] Failure modes (allow clipping / overflow / broken values)
-- [ ] RGB misregistration (channel offset)
-- [ ] Data bending (treat image as raw data)
-- [ ] Inversion zones (partial color inversion)
-- [ ] Cross-image contamination (layers affect each other)
-- [ ] Partial destruction + reconstruction
-- [ ] Temporal stacking (multiple mutation passes layered)
-- [ ] Random rule constraints (system-driven composition rules)
+* **Image instability over resolution**
+  The system avoids clean outputs in favor of ambiguous, awkward compositions.
 
 ---
 
-### 🧠 Composition-Driven Mutations
+## Known Behaviors / Intentional Design Choices
 
-- [ ] Density control (internal crowding vs sparsity)
-- [ ] Hierarchy suppression (flatten importance)
-- [ ] Forced awkward cropping
-- [ ] Internal overlap (duplicate + offset within image)
-- [ ] Center-of-mass shifting (bias internal weight)
-
----
-
-## Priority Next Steps
-
-- [ ] Value compression
-- [ ] Gradient mapping
-- [ ] Selective color replacement
-- [ ] Directional smearing
-- [ ] Brightness-based masking
-
-## TODO
-
-### Core Interaction
-
-* [ ] Add layer selection system (single click to select)
-* [ ] Add lock/unlock via UI (button or keyboard shortcut)
-* [ ] Fix inability to lock overlapping layers via direct click
-* [ ] Visual indicator for selected layer (non-intrusive)
-* [ ] Allow multi-layer locking without UI ambiguity
+* Effects may not always trigger even when enabled (by design)
+* Postproduction is intentionally inconsistent to avoid uniformity
+* Composition may produce awkward or imbalanced layouts
+* Mutation may significantly degrade source images
 
 ---
 
-### Composition Controls (UI)
+## TODO / Next Steps
 
-Add minimal controls to influence generation without overcomplicating the tool:
+### UI / Controls
 
-* [ ] Density (layer count)
-* [ ] Overlap intensity
-* [ ] Scale variance (hierarchy strength)
-* [ ] Edge pressure (cropping bias)
-* [ ] Rotation intensity
-* [ ] Opacity range / transparency bias
-* [ ] Toggle composition systems:
-* [ ] Composition modes on/off
-* [ ] Overlap placement on/off
-* [ ] Smart remix on/off
-* [ ] Consider preset buttons:
-* [ ] “Sparse”
-* [ ] “Dense”
-* [ ] “Edge-heavy”
-* [ ] “Overlapping”
+* Add sliders for effect intensities (currently hardcoded)
+* Group controls visually (collapse sections)
+* Add thumbnails for uploaded images
+* Add preset saving / loading
 
 ---
 
-### Workflow Improvements
+### Composition Improvements
 
-* [ ] Add undo/redo (basic history stack)
-* [ ] Add ability to regenerate only unlocked layers
-* [ ] Export composition as image
-
----
-
-### Rendering / Performance
-
-* [ ] Avoid repeated `toDataURL()` calls (performance)
-* [ ] Consider caching mutated canvases
-* [ ] Improve rendering efficiency for many layers
+* Better spatial hierarchy control
+* Constraint-based composition modes
+* Layer grouping / clustering behavior
 
 ---
 
-### Bug Fixes
+### Mutation System
 
-* [ ] Fix layer selection when layers overlap (click-through issue)
-* [ ] Ensure consistent z-index behavior after multiple generates
+* Parameterize all mutation strengths
+* Add masking visualization/debug mode
+* Introduce edge-aware or semantic masking
+
+---
+
+### Postproduction
+
+* User-defined palette selection
+* Palette preview UI
+* Adjustable probability per effect
+
+---
+
+### Performance
+
+* Optimize large image handling
+* Reduce repeated canvas allocations
+* Debounce UI-driven rerenders
 
 ---
 
 ## Notes
 
-The tool is intentionally minimal.
+This tool is not intended to produce finished images.
+It is designed to generate **material for painting**—images that resist clarity, contain internal tension, and require interpretation.
 
-New features should:
-
-* improve compositional quality
-* preserve unpredictability
-* avoid UI clutter
-
-When in doubt, prioritize:
-
-> better images over more features
+The goal is not control, but negotiation.
 
 ---
