@@ -166,6 +166,62 @@ generate → state.layers
 * Mutation may significantly degrade source images
 
 ---
+## Running Locally
+
+Because this project uses ES modules (`type="module"`), it must be served over a local server. Opening `index.html` directly will not work.
+
+### Option 1: Python (recommended)
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+```
+http://localhost:8000
+```
+
+---
+
+### Option 2: Node
+
+```bash
+npx serve
+```
+
+or
+
+```bash
+npx http-server
+```
+
+---
+
+### Option 3: VS Code
+
+Use the **Live Server** extension and click “Go Live”.
+
+---
+
+## Notes
+
+* Upload images using the top-right controls
+* Generate creates a new composition
+* Remix reworks the current composition
+* Default resets all settings
+
+---
+
+## Why this matters
+
+Without a server:
+
+* ES module imports (`import ... from './file.js'`) will fail
+* The browser blocks local file access
+* The app will not run
+
+---
 
 ## TODO / Next Steps
 
