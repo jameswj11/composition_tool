@@ -17,7 +17,7 @@ export function mutateImage(source, placedLayers = []) {
     newCanvas.width = width;
     newCanvas.height = height;
 
-    const displayWidth = 1200;
+    const displayWidth = state.canvasWidth;
 
     newCanvas.style.width = displayWidth + 'px';
     newCanvas.style.height = 'auto';

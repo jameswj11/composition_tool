@@ -17,8 +17,8 @@ function renderFinalStage(stageWidth = 1000, stageHeight = 700) {
 };
 
 export function handleGenerate() {
-    const stageWidth = 1000;
-    const stageHeight = 700;
+    const stageWidth = state.canvasWidth;
+    const stageHeight = state.canvasHeight;
 
     stage.innerHTML = '';
 
@@ -97,8 +97,8 @@ export function handleGenerate() {
 
 // preserve layers and remix
 export function remixLayers() {
-    const stageWidth = 1000;
-    const stageHeight = 700;
+    const stageWidth = state.canvasWidth;
+    const stageHeight = state.canvasHeight;
     const { useSmartRemix } = state.compositionSettings;
 
     state.layers = state.layers.map((layer, index) => {

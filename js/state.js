@@ -2,6 +2,8 @@ export const state = {
     sourceImages: [],
     layers: [],
     hasGenerated: false,
+    canvasWidth: 1000,
+    canvasHeight: 700,
 
     // FUTURE CONTROL: global settings
     compositionSettings: {
@@ -11,18 +13,18 @@ export const state = {
     },
     mutationSettings: {
         posterize: false,
-        sliceShift: false,
-        shapeErase: false,
-        displacement: false,
-        destroyRebuild: false,
+        sliceShift: true,
+        shapeErase: true,
+        displacement: true,
+        destroyRebuild: true,
         edgeBite: false,
-        edgeErosion: false,
-        saturationBoost: false,
-        hueReassign: false,
-        colorInjection: false,
-        valuePreservingSaturation: false,
-        colorRangeExpansion: false,
-        brightnessMasking: false
+        edgeErosion: true,
+        saturationBoost: true,
+        hueReassign: true,
+        colorInjection: true,
+        valuePreservingSaturation: true,
+        colorRangeExpansion: true,
+        brightnessMasking: true
     },
     postProductionSettings: {
         valueCompression: true,

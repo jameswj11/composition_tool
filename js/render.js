@@ -96,8 +96,8 @@ export function renderCompositionToCanvas() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    canvas.width = 1000;
-    canvas.height = 700;
+    canvas.width = state.canvasWidth;
+    canvas.height = state.canvasHeight;
 
     const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
 

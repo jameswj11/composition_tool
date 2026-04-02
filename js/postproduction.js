@@ -21,7 +21,6 @@ export function applyPostProduction(sourceCanvas) {
     // for most of these global postproduction effects, no randomness
     if (state.postProductionSettings.valueCompression && Math.random() < 0.3) {
         const compressionAmount = random(0.4, 0.8);
-        console.log('compress values, amount:', compressionAmount)
 
         compressValuesPost(
             ctx,
@@ -32,9 +31,8 @@ export function applyPostProduction(sourceCanvas) {
         );
     };
 
-    if (state.postProductionSettings.depthCompression) {
+    if (state.postProductionSettings.depthCompression && Math.random() < 0.5) {
         const strength = random(0.3, 0.7);
-        console.log('compress depth, strength:', strength)
 
         compressDepthPost(
             ctx,
@@ -57,8 +55,7 @@ export function applyPostProduction(sourceCanvas) {
         );
     };
 
-    if (state.postProductionSettings.paletteLimiting) {
-        console.log('limit palette')
+    if (state.postProductionSettings.paletteLimiting && Math.random() < 0.5) {
         limitPalettePost(
             ctx,
             outputCanvas.width,
