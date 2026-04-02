@@ -1,7 +1,8 @@
-import { renderLayers, flashLockedIndicators } from './render.js';
+import { renderLayers, flashLockedIndicators, renderCompositionToCanvas } from './render.js';
 import { state } from './state.js';
 import { random, clamp, weightedChoice } from './utils.js';
 import { mutateImage } from './mutation.js';
+import { applyPostProduction } from './postproduction.js';
 
 export function handleGenerate() {
     const stageWidth = 1000;
@@ -76,6 +77,28 @@ export function handleGenerate() {
 
     renderLayers();
     flashLockedIndicators();
+
+    state.layers = [...lockedLayers, ...newLayers]
+
+    // NEW: build composition canvas
+    const compositionCanvas = renderCompositionToCanvas(
+        state.layers,
+        stageWidth,
+        stageHeight
+    );
+
+    // NEW: apply postproduction
+    const finalCanvas = applyPostProduction(compositionCanvas);
+
+    finalCanvas.width = stageWidth;
+    finalCanvas.height = stageHeight;
+    finalCanvas.style.display = 'block';
+    finalCanvas.style.width = stageWidth + 'px';
+    finalCanvas.style.height = stageHeight + 'px';
+
+    // NEW: replace stage with final image
+    stage.innerHTML = '';
+    stage.appendChild(finalCanvas);
 
     state.hasGenerated = true;
     remixBtn.disabled = false;

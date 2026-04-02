@@ -92,3 +92,22 @@ export function flashLockedIndicators(duration = 1000) {
         renderLayers();
     }, duration)
 };
+
+export function renderCompositionToCanvas() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 1000;
+    canvas.height = 700;
+
+    for (const layer of state.layers) {
+        ctx.save();
+        ctx.globalAlpha = layer.opacity;
+        ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
+        ctx.rotate((layer.rotation * Math.PI) / 180);
+        ctx.drawImage(layer.canvas, -layer.width / 2, -layer.height / 2, layer.width, layer.height);
+        ctx.restore();
+    };
+
+    return canvas;
+};

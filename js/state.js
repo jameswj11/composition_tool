@@ -22,6 +22,10 @@ export const state = {
         colorInjection: false,
         valuePreservingSaturation: false,
         colorRangeExpansion: false,
-        brightnessMasking: true
+        brightnessMasking: false
+    },
+    postProductionSettings: {
+        valueCompression: true,
+        saturationBoost: true
     }
 };
