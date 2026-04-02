@@ -17,11 +17,6 @@ export function mutateImage(source, placedLayers = []) {
     newCanvas.width = width;
     newCanvas.height = height;
 
-    const displayWidth = state.canvasWidth;
-
-    newCanvas.style.width = displayWidth + 'px';
-    newCanvas.style.height = 'auto';
-
     ctx.drawImage(image, 0, 0, width, height);
 
     if (state.mutationSettings.edgeErosion && Math.random() < 0.8) {

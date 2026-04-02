@@ -1,11 +1,11 @@
-export const state = {
+export const defaultState = {
     sourceImages: [],
     layers: [],
     hasGenerated: false,
     canvasWidth: 1000,
     canvasHeight: 700,
+    backgroundColor: '#000000',
 
-    // FUTURE CONTROL: global settings
     compositionSettings: {
         useCompositionMode: true,
         useOverlapPlacement: true,
@@ -33,3 +33,15 @@ export const state = {
         paletteLimiting: true
     }
 };
+
+export function resetStateToDefaults() {
+    state.canvasWidth = defaultState.canvasWidth;
+    state.canvasHeight = defaultState.canvasHeight;
+    state.backgroundColor = defaultState.backgroundColor;
+
+    state.compositionSettings = structuredClone(defaultState.compositionSettings);
+    state.mutationSettings = structuredClone(defaultState.mutationSettings);
+    state.postProductionSettings = structuredClone(defaultState.postProductionSettings);
+};
+
+export const state = structuredClone(defaultState);
