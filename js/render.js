@@ -1,7 +1,9 @@
 import { state } from "./state.js";
-import { stage } from "./dom.js";
 
 // main render layer function
+
+/* LEGACY CODE HERE, MAY BE REVIVED IN FUTURE
+
 export function renderLayers() {
     stage.innerHTML = '';
 
@@ -92,12 +94,17 @@ export function flashLockedIndicators(duration = 1000) {
     }, duration)
 };
 
+*/
+
 export function renderCompositionToCanvas() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     canvas.width = state.canvasWidth;
     canvas.height = state.canvasHeight;
+
+    ctx.fillStyle = state.backgroundColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
 

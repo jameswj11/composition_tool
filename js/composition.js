@@ -1,26 +1,10 @@
-import { renderCompositionToCanvas } from './render.js';
 import { state } from './state.js';
 import { random, clamp, weightedChoice } from './utils.js';
 import { mutateImage } from './mutation.js';
-import { applyPostProduction } from './postproduction.js';
-
-function renderFinalStage(stageWidth = 1000, stageHeight = 700) {
-    const compositionCanvas = renderCompositionToCanvas();
-    const finalCanvas = applyPostProduction(compositionCanvas);
-
-    finalCanvas.style.display = 'block';
-    finalCanvas.style.width = stageWidth + 'px';
-    finalCanvas.style.height = stageHeight + 'px';
-
-    stage.innerHTML = '';
-    stage.appendChild(finalCanvas);
-};
 
 export function handleGenerate() {
     const stageWidth = state.canvasWidth;
     const stageHeight = state.canvasHeight;
-
-    stage.innerHTML = '';
 
     const shuffled = [...state.sourceImages].sort(() => Math.random() - 0.5);
     const desiredLayerCount = Math.min(Math.floor(random(3, 6)), shuffled.length); // FUTURE CONTROL: density / layer count range
@@ -86,17 +70,12 @@ export function handleGenerate() {
     });
 
     state.layers = [...lockedLayers, ...newLayers]
-
-    state.layers = [...lockedLayers, ...newLayers];
-
-    renderFinalStage(stageWidth, stageHeight);
-
-    state.hasGenerated = true;
-    remixBtn.disabled = false;
 };
 
 // preserve layers and remix
 export function remixLayers() {
+    if (!state.hasGenerated) return;
+
     const stageWidth = state.canvasWidth;
     const stageHeight = state.canvasHeight;
     const { useSmartRemix } = state.compositionSettings;
@@ -134,8 +113,6 @@ export function remixLayers() {
             opacity: clamp(layer.opacity + random(-opacityJitter, opacityJitter), 0.5, 1)
         };
     });
-
-    renderFinalStage(stageWidth, stageHeight);
 };
 
 // gives generation spatial bias without killing randomness
