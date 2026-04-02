@@ -68,27 +68,33 @@ export function mutateImage(source, placedLayers = []) {
     };
 
     // FUTURE CONTROLS: probability of color mutations happening (global)
-    if (state.mutationSettings.hueReassign && Math.random() < 0.5) {
+    if (state.mutationSettings.hueReassign && Math.random() < 0.25) {
         const hueShift = random(-0.22, 0.22);
         reassignHueInRegion(ctx, width, height, hueShift);
     };
 
-    if (state.mutationSettings.colorInjection && Math.random() < 0.5) {
+    if (state.mutationSettings.colorInjection && Math.random() < 0.18) {
         const targetColor = getInjectionColor();
         const strength = random(0.25, 0.55);
         injectColorInRegion(ctx, width, height, targetColor, strength);
     };
 
-    if (state.mutationSettings.valuePreservingSaturation && Math.random() < 0.5) {
+    if (state.mutationSettings.valuePreservingSaturation && Math.random() < 0.3) {
         const amount = random(1.3, 1.9);
         pushSaturationPreserveValue(ctx, width, height, amount);
+    };
+
+    if (state.mutationSettings.colorRangeExpansion && Math.random() < 0.2) {
+        const saturationAmount = random(1.25, 1.9);
+        const lightnessPush = random(0.04, 0.1);
+        expandColorRangeInRegion(ctx, width, height, saturationAmount, lightnessPush);
     };
 
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
     };
 
-    if (state.mutationSettings.saturationBoost && Math.random() < 0.5) {
+    if (state.mutationSettings.saturationBoost && Math.random() < 0.35) {
         const amount = random(4, 8);
         boostSaturationInRegion(ctx, width, height, amount);
     };
@@ -843,6 +849,53 @@ export function pushSaturationPreserveValue(ctx, width, height, amount = 1.5) {
 
             const newS = Math.min(1, s * amount);
             const rgb = hslToRgb(h, newS, l);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
+};
+
+export function expandColorRangeInRegion(ctx, width, height, saturationAmount = 1.5, lightnessPush = 0.08) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+
+            if (s < 0.03) continue;
+
+            const expandedS = Math.min(1, s * saturationAmount);
+
+            let expandedL = l;
+            if (l >= 0.35 && l <= 0.65) {
+                expandedL = l < 0.5
+                    ? Math.max(0, l - lightnessPush)
+                    : Math.min(1, l + lightnessPush);
+            }
+
+            const rgb = hslToRgb(h, expandedS, expandedL);
 
             data[i] = rgb.r;
             data[i + 1] = rgb.g;
