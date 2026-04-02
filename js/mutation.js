@@ -30,7 +30,7 @@ export function mutateImage(source, placedLayers = []) {
         silhouetteBreak(ctx, width, height);
     };
 
-    if (state.mutationSettings.edgeBite && Math.random() < 0.99) {
+    if (state.mutationSettings.edgeBite && Math.random() < 0.75) {
         edgeBite(ctx, width, height);
     };
 
@@ -42,7 +42,7 @@ export function mutateImage(source, placedLayers = []) {
     };
 
     // FUTURE CONTROL: frequency of slice shifting
-    if (state.mutationSettings.sliceShift && Math.random() < 0.7) {
+    if (state.mutationSettings.sliceShift && Math.random() < 0.5) {
         shiftSlices(ctx, width, height);
         shiftSlices(ctx, width, height)
     };
@@ -62,33 +62,39 @@ export function mutateImage(source, placedLayers = []) {
 
             scaledMapCtx.drawImage(randomLayer.canvas, 0, 0, width, height);
             mapCanvas = scaledMapCanvas;
-        }
+        };
 
         displaceImage(ctx, width, height, strength, mapCanvas);
     };
 
+    // FUTURE CONTROLS: probability of color mutations happening (global)
     if (state.mutationSettings.hueReassign && Math.random() < 0.5) {
         const hueShift = random(-0.22, 0.22);
         reassignHueInRegion(ctx, width, height, hueShift);
     };
 
-    if (state.mutationSettings.colorInjection && Math.random() < 0.45) {
+    if (state.mutationSettings.colorInjection && Math.random() < 0.5) {
         const targetColor = getInjectionColor();
         const strength = random(0.25, 0.55);
         injectColorInRegion(ctx, width, height, targetColor, strength);
-    }
+    };
+
+    if (state.mutationSettings.valuePreservingSaturation && Math.random() < 0.5) {
+        const amount = random(1.3, 1.9);
+        pushSaturationPreserveValue(ctx, width, height, amount);
+    };
 
     if (state.mutationSettings.destroyRebuild && Math.random() < 0.5) {
         destroyAndReconstruct(ctx, width, height);
     };
 
-    if (state.mutationSettings.saturationBoost && Math.random() < 0.99) {
+    if (state.mutationSettings.saturationBoost && Math.random() < 0.5) {
         const amount = random(4, 8);
         boostSaturationInRegion(ctx, width, height, amount);
     };
 
     // FUTURE CONTROL: posterization toggle
-    if (state.mutationSettings.posterize && Math.random() < 0.6) {
+    if (state.mutationSettings.posterize && Math.random() < 0.25) {
         const posterizationLevels = Math.floor(random(2, 10));
         posterizeImage(ctx, width, height, posterizationLevels)
     };
@@ -805,4 +811,44 @@ export function getInjectionColor() {
     ];
 
     return palette[Math.floor(Math.random() * palette.length)];
+};
+
+export function pushSaturationPreserveValue(ctx, width, height, amount = 1.5) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskCtx.fillStyle = 'black';
+    maskCtx.fillRect(0, 0, width, height);
+
+    maskCtx.fillStyle = 'white';
+    buildLargeOrganicShapePath(maskCtx, width, height);
+    maskCtx.fill();
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const maskValue = maskData[i];
+
+        if (maskValue > 0 && data[i + 3] > 0) {
+            const { h, s, l } = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+
+            if (s < 0.04) continue;
+            if (l < 0.06 || l > 0.94) continue;
+
+            const newS = Math.min(1, s * amount);
+            const rgb = hslToRgb(h, newS, l);
+
+            data[i] = rgb.r;
+            data[i + 1] = rgb.g;
+            data[i + 2] = rgb.b;
+        };
+    };
+
+    ctx.putImageData(imageData, 0, 0);
 };
