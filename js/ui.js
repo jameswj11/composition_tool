@@ -1,24 +1,33 @@
 import { state, resetStateToDefaults } from './state.js';
 import { rerenderCurrentComposition, generateAndRender, remixAndRender } from './app.js';
 import { renderStatus } from './upload.js';
+import { exportBtn, clearBtn } from './dom.js';
+import { exportComposition } from './render.js';
 
-const clearBtn = document.getElementById('clearImagesBtn');
+export function updateUIState() {
+    const hasComposition = state.hasGenerated && state.layers.length > 0;
+
+    if (exportBtn) {
+        exportBtn.disabled = !hasComposition;
+    };
+};
 
 if (clearBtn) {
     clearBtn.addEventListener('click', () => {
         state.sourceImages = [];
 
         renderStatus();
-
+        
         generateBtn.disabled = true;
         remixBtn.disabled = true;
-
+        
         state.layers = [];
         state.hasGenerated = false;
-
+        
+        updateUIState();
         stage.innerHTML = '';
     });
-}
+};
 
 const CONTROL_MAP = [
     {
@@ -161,16 +170,16 @@ function getControlValue(el, type) {
     if (type === 'checkbox') return el.checked;
     if (type === 'number') return Number(el.value);
     return el.value;
-}
+};
 
 function setControlValue(el, type, value) {
     if (type === 'checkbox') {
         el.checked = value;
         return;
-    }
+    };
 
     el.value = value;
-}
+};
 
 export function syncControlsFromState() {
     const canvasWidthEl = document.getElementById('canvasWidth');
@@ -193,7 +202,7 @@ export function syncControlsFromState() {
 
         setControlValue(el, control.type, control.get());
     });
-}
+};
 
 export function initControls() {
     syncControlsFromState();
@@ -224,9 +233,10 @@ export function initControls() {
     if (generateBtn) {
         generateBtn.addEventListener('click', () => {
             generateAndRender();
+            updateUIState();
             remixBtn.disabled = !state.hasGenerated;
         });
-    }
+    };
 
     if (defaultBtn) {
         defaultBtn.addEventListener('click', () => {
@@ -235,15 +245,20 @@ export function initControls() {
 
             if (state.hasGenerated) {
                 rerenderCurrentComposition();
-            }
+            };
         });
-    }
+    };
 
     if (remixBtn) {
         remixBtn.addEventListener('click', () => {
             remixAndRender();
+            updateUIState();
         });
 
         remixBtn.disabled = !state.hasGenerated;
-    }
-}
+    };
+};
+
+export function bindUI() {
+    exportBtn?.addEventListener('click', exportComposition);
+};
