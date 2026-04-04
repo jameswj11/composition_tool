@@ -4,7 +4,7 @@ import { remixLayers } from './composition.js';
 import { renderCompositionToCanvas } from './render.js';
 import { applyPostProduction } from './postproduction.js';
 import { stage, fileInput, generateBtn, remixBtn } from './dom.js';
-import { initControls } from './ui.js';
+import { bindUI, initControls, updateUIState } from './ui.js';
 import { handleFiles } from './upload.js';
 import { clampCanvasSize } from './utils.js';
 
@@ -51,6 +51,8 @@ export function remixAndRender() {
 }
 
 initControls();
+bindUI();
+updateUIState();
 
 fileInput.addEventListener('change', handleFiles);
 

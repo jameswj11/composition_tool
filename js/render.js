@@ -96,15 +96,17 @@ export function flashLockedIndicators(duration = 1000) {
 
 */
 
-export function renderCompositionToCanvas() {
+export function renderCompositionToCanvas(scale = 1) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    canvas.width = state.canvasWidth;
-    canvas.height = state.canvasHeight;
+    canvas.width = state.canvasWidth * scale;
+    canvas.height = state.canvasHeight * scale;
+
+    ctx.scale(scale, scale);
 
     ctx.fillStyle = state.backgroundColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
 
     const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -113,9 +115,36 @@ export function renderCompositionToCanvas() {
         ctx.globalAlpha = layer.opacity;
         ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
         ctx.rotate((layer.rotation * Math.PI) / 180);
-        ctx.drawImage(layer.canvas, -layer.width / 2, -layer.height / 2, layer.width, layer.height);
+        ctx.drawImage(
+            layer.canvas,
+            -layer.width / 2,
+            -layer.height / 2,
+            layer.width,
+            layer.height
+        );
         ctx.restore();
     };
 
     return canvas;
+};
+
+export function exportComposition() {
+    const canvas = renderCompositionToCanvas(2);
+    if (!canvas) return;
+
+    canvas.toBlob((blob) => {
+        if (!blob) return;
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `composition-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 100);
+    }, 'image/png');
 };
