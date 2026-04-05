@@ -8,17 +8,32 @@ import { bindUI, initControls, updateUIState } from './ui.js';
 import { handleFiles } from './upload.js';
 import { clampCanvasSize } from './utils.js';
 
-// re-render current layers with current settings
 export function rerenderCurrentComposition() {
-    let canvas = renderCompositionToCanvas();
-    canvas = applyPostProduction(canvas);
+    let base = renderCompositionToCanvas(1, false);
+    state.finalCanvas = applyPostProduction(base);
+
+    redrawFromCache();
+};
+
+export function redrawFromCache() {
+    if (!state.finalCanvas) return;
+
+    const displayCanvas = document.createElement('canvas');
+    const ctx = displayCanvas.getContext('2d');
+
+    displayCanvas.width = state.canvasWidth;
+    displayCanvas.height = state.canvasHeight;
+
+    ctx.fillStyle = state.backgroundColor;
+    ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+
+    ctx.drawImage(state.finalCanvas, 0, 0);
 
     stage.style.width = `${state.canvasWidth}px`;
     stage.style.height = `${state.canvasHeight}px`;
     stage.innerHTML = '';
-
-    stage.appendChild(canvas);
-}
+    stage.appendChild(displayCanvas);
+};
 
 // generate brand new composition
 export function generateAndRender() {

@@ -96,7 +96,7 @@ export function flashLockedIndicators(duration = 1000) {
 
 */
 
-export function renderCompositionToCanvas(scale = 1) {
+export function renderCompositionToCanvas(scale = 1, includeBackground = true) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -105,8 +105,10 @@ export function renderCompositionToCanvas(scale = 1) {
 
     ctx.scale(scale, scale);
 
-    ctx.fillStyle = state.backgroundColor;
-    ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+    if (includeBackground) {
+        ctx.fillStyle = state.backgroundColor;
+        ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+    };
 
     const orderedLayers = [...state.layers].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -129,7 +131,19 @@ export function renderCompositionToCanvas(scale = 1) {
 };
 
 export function exportComposition() {
-    const canvas = renderCompositionToCanvas(2);
+    if (!state.finalCanvas) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = state.canvasWidth * 2;
+    canvas.height = state.canvasHeight * 2;
+
+    ctx.scale(2, 2);
+    ctx.fillStyle = state.backgroundColor;
+    ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+    ctx.drawImage(state.finalCanvas, 0, 0);
+
     if (!canvas) return;
 
     canvas.toBlob((blob) => {
