@@ -2,6 +2,7 @@ export const defaultState = {
     sourceImages: [],
     layers: [],
     hasGenerated: false,
+    finalCanvas: null,
     canvasWidth: 1000,
     canvasHeight: 700,
     backgroundColor: '#000000',

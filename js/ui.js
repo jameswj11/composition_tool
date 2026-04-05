@@ -1,5 +1,10 @@
 import { state, resetStateToDefaults } from './state.js';
-import { rerenderCurrentComposition, generateAndRender, remixAndRender } from './app.js';
+import {
+    rerenderCurrentComposition,
+    generateAndRender,
+    remixAndRender,
+    redrawFromCache
+} from './app.js';
 import { renderStatus } from './upload.js';
 import { exportBtn, clearBtn } from './dom.js';
 import { exportComposition } from './render.js';
@@ -17,13 +22,13 @@ if (clearBtn) {
         state.sourceImages = [];
 
         renderStatus();
-        
+
         generateBtn.disabled = true;
         remixBtn.disabled = true;
-        
+
         state.layers = [];
         state.hasGenerated = false;
-        
+
         updateUIState();
         stage.innerHTML = '';
     });
@@ -35,7 +40,7 @@ const CONTROL_MAP = [
         type: 'color',
         get: () => state.backgroundColor,
         set: (value) => { state.backgroundColor = value; },
-        rerender: true
+        redrawOnly: true
     },
 
     {
@@ -220,9 +225,16 @@ export function initControls() {
             const value = getControlValue(e.target, control.type);
             control.set(value);
 
-            if (control.rerender && state.hasGenerated) {
+            if (!state.hasGenerated) return;
+
+            if (control.redrawOnly) {
+                redrawFromCache();
+                return;
+            };
+
+            if (control.rerender) {
                 rerenderCurrentComposition();
-            }
+            };
         });
     });
 
